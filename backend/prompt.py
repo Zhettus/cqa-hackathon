@@ -236,7 +236,11 @@ def build_dialog_criteria_block(criteria: list[dict], hints: dict[str, list[dict
     hints = hints or {}
     parts = [f"ОЦЕНИ ОПЕРАТОРА ПО ВСЕМ {len(criteria)} КРИТЕРИЯМ ЧЕК-ЛИСТА и верни JSON: ключ — id критерия, "
              "значение — объект ответа по критерию (evidence, checked_range, na_reason, reasoning, answer"
-             "[, violation_type]). Каждый недостаток относи к критерию, чья формулировка его описывает.", ""]
+             "[, violation_type]). Каждый недостаток относи к критерию, чья формулировка его описывает.",
+             "Доказательства обязательны по КАЖДОМУ критерию (кроме N/A): evidence — дословные цитаты с номером "
+             "реплики (#idx), когда есть что процитировать; checked_range {from, to} — диапазон реплик оператора, "
+             "которые ты проверил, — заполняй ВСЕГДА, даже если нарушений нет или действие выполнено. Пустой "
+             "evidence вместе с checked_range = null — ошибка, такой ответ будет отклонён.", ""]
     for c in criteria:
         block = build_criterion_block(c, hints.get(c["id"]))
         block = block.replace("Оцени оператора по этому критерию и верни JSON по схеме.", "").rstrip()
