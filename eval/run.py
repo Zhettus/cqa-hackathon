@@ -193,7 +193,8 @@ def render(meta: dict, results: list[dict], mt: dict, edge: list[dict], checklis
     L = [f"# Прогон оценки {meta['started']}", "",
          f"- Эталон: {', '.join(meta['gold'])}",
          f"- Чек-лист: {checklist['id']} v{checklist['version']}; промпт: {meta['prompt_version']}",
-         f"- Модель: {meta['model']}; голосов: {meta['votes']}",
+         f"- Модель: {meta['model']}; голосов: {meta['votes']}; нормализация звонков: "
+         f"{'да' if meta.get('normalize') else 'нет'}" + (f"; только канал {meta['channel']}" if meta.get("channel") else ""),
          f"- Диалогов: {len(results)}; из кэша: {sum(r['cached'] for r in results)}; "
          f"стоимость новых вызовов: ${meta['usd']:.4f}; время: {meta['seconds']:.0f} с", ""]
     bad = [r for r in results if r.get("status_mismatch")]
@@ -261,6 +262,9 @@ async def main_async(args) -> int:
         for a in json.loads(Path(p).read_text(encoding="utf-8"))["annotations"]:
             gold[a["conversation_id"]] = a
     ids = args.ids or list(gold)
+    if args.channel:
+        chan = {c["conversation_id"]: c["channel"] for c in db.list_conversations(conn)}
+        ids = [i for i in ids if chan.get(i) == args.channel]
     missing = [i for i in ids if i not in gold]
     if missing:
         print(f"Нет в эталоне {args.gold}: {missing}", file=sys.stderr)
@@ -268,9 +272,10 @@ async def main_async(args) -> int:
     checklist = db.get_checklist(conn, args.checklist, args.version)
     provider = get_provider()
     votes = args.votes or default_votes()
-    evaluator = Evaluator(conn, provider)
+    evaluator = Evaluator(conn, provider, normalize_calls=args.normalize)
     print(f"Модель {provider.name}/{provider.model}, голосов {votes}, промпт {prompt_version()}, "
-          f"чек-лист v{checklist['version']}, диалогов {len(ids)}", flush=True)
+          f"чек-лист v{checklist['version']}, диалогов {len(ids)}, нормализация звонков: "
+          f"{'да' if args.normalize else 'нет'}", flush=True)
     t0 = time.time()
     sem = asyncio.Semaphore(args.parallel)
     done = {"n": 0}
@@ -305,6 +310,7 @@ async def main_async(args) -> int:
     mt = metrics(results, checklist)
     meta = {"started": datetime.now().strftime("%Y-%m-%d %H:%M"), "gold": args.gold,
             "prompt_version": prompt_version(), "model": f"{provider.name}/{provider.model}", "votes": votes,
+            "normalize": bool(args.normalize), "channel": args.channel,
             "usd": sum((r["cost"] or {}).get("usd", 0) for r in results if not r["cached"]),
             "seconds": time.time() - t0}
     REPORTS.mkdir(parents=True, exist_ok=True)
@@ -334,6 +340,8 @@ def main() -> int:
     ap.add_argument("--parallel", type=int, default=4, help="диалогов одновременно")
     ap.add_argument("--no-cache", action="store_true")
     ap.add_argument("--db", default=None)
+    ap.add_argument("--normalize", action="store_true", help="нормализовать текст звонков моделью (этап 5)")
+    ap.add_argument("--channel", default=None, help="только этот канал: 'voice call' | 'agent chat'")
     return asyncio.run(main_async(ap.parse_args()))
 
 

@@ -71,7 +71,7 @@ def test_cache_by_key(edge_records, monkeypatch):
     assert ev2["id"] == ev1["id"] and ev2["cached"] and len(prov.calls) == 8
     asyncio.run(Evaluator(conn, prov).evaluate("edge-ru-001", use_cache=True, votes=2))      # другой ключ
     assert len(prov.calls) == 8 + 16
-    monkeypatch.setattr("backend.evaluator.prompt_version", lambda: "другая-версия")
+    monkeypatch.setattr("backend.evaluator.prompt_version", lambda normalized=False: "другая-версия")
     ev4 = asyncio.run(Evaluator(conn, prov).evaluate("edge-ru-001", use_cache=True))
     assert ev4["id"] != ev1["id"]
     ev5 = asyncio.run(Evaluator(conn, prov).evaluate("edge-ru-001"))                          # без кэша — новая

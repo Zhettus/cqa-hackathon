@@ -42,9 +42,12 @@ class CriterionOutcome:
 
 
 class Evaluator:
-    def __init__(self, conn, provider: LLMProvider | None = None):
+    def __init__(self, conn, provider: LLMProvider | None = None, normalize_calls: bool | None = None):
         self.conn = conn
         self.provider = provider or get_provider()
+        # нормализация текста звонков моделью-корректором (этап 5); по умолчанию — NORMALIZE_CALLS из .env
+        self.normalize_calls = (os.getenv("NORMALIZE_CALLS", "0").lower() in ("1", "true", "yes")
+                                if normalize_calls is None else normalize_calls)
 
     # --- один голос по одному критерию с повторами ---------------------------------------
     async def _one_vote(self, ctx: dict, criterion: dict, vote_no: int) -> Vote:
@@ -121,7 +124,8 @@ class Evaluator:
         conv = db.get_conversation(self.conn, conversation_id)
         checklist = db.get_checklist(self.conn, checklist_id, checklist_version)
         n_votes = votes or default_votes()
-        pv = prompt_version()
+        normalize = self.normalize_calls and conv.get("channel") == "voice call"
+        pv = prompt_version(normalized=normalize)
         if use_cache:
             cached = db.find_cached_evaluation(self.conn, conversation_id, checklist["id"], checklist["version"],
                                                pv, self.provider.model, n_votes, self.provider.effort)
@@ -134,7 +138,7 @@ class Evaluator:
                 "model_provider": self.provider.name, "model_name": self.provider.model,
                 "prompt_version": pv, "votes": n_votes, "effort": self.provider.effort}
         try:
-            return await self._run(conv, checklist, settings, base, n_votes, t0)
+            return await self._run(conv, checklist, settings, base, n_votes, t0, normalize)
         except LLMError as e:
             if e.code == "auth":                                   # нет доступа к модели — дальше бессмысленно
                 raise
@@ -145,11 +149,16 @@ class Evaluator:
                                          "duration_ms": int((time.perf_counter() - t0) * 1000)}, [])
         return db.get_evaluation(self.conn, eid)
 
-    async def _run(self, conv: dict, checklist: dict, settings: dict, base: dict, n_votes: int, t0: float) -> dict:
+    async def _run(self, conv: dict, checklist: dict, settings: dict, base: dict, n_votes: int, t0: float,
+                   normalize: bool = False) -> dict:
         eid = base["id"]
         batch_id = base["batch_id"]
         pre = preprocess(conv, settings)
         base["facts"] = pre.facts.model_dump()
+        if normalize and pre.facts.operator_messages > 0:
+            from backend.normalize import apply_normalization, normalize_call
+            norm, _ = await normalize_call(self.conn, self.provider, pre, evaluation_id=eid, batch_id=batch_id)
+            pre = apply_normalization(pre, norm)
 
         if pre.facts.operator_messages == 0:                       # инвариант 10: LLM не вызывается
             db.insert_evaluation(self.conn, {**base, "status": "not_evaluable", "status_reason": NOT_EVALUABLE_REASON,
@@ -158,7 +167,7 @@ class Evaluator:
             return db.get_evaluation(self.conn, eid)
 
         ctx = {"evaluation_id": eid, "batch_id": batch_id, "pre": pre,
-               "system": build_system(pre.channel), "dialog": build_dialog_block(pre, settings),
+               "system": build_system(pre.channel, normalized=normalize), "dialog": build_dialog_block(pre, settings),
                "hints": {c["id"]: find_hints(c, pre) for c in checklist["criteria"]},
                "criteria": checklist["criteria"]}
         outcomes = await asyncio.gather(*(self._criterion(ctx, c, n_votes) for c in checklist["criteria"]))

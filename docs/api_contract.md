@@ -116,8 +116,11 @@ JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся 
     "segment": "operator", // pre_operator|ivr|operator|hold|consultation|after_end
     "flags": [],           // duplicate|ivr|client_not_hearing|after_end|dtmf
     "counts_for_operator": true,  // засчитывается ли реплика оператору (инвариант 9)
-    "event": null          // для system: escalation|identity_verified|operator_closed|client_left|connection_lost|agent_joined|call_ended|hold_start|hold_end|consult_start|consult_end|recording|language_changed|other
-  } ]
+    "event": null,         // для system: escalation|identity_verified|operator_closed|client_left|connection_lost|agent_joined|call_ended|hold_start|hold_end|consult_start|consult_end|recording|language_changed|other
+    "text_clean": "…",     // звонки: текст после модели-корректора ASR (этап 5), если нормализация уже делалась; иначе null
+    "asr_uncertain": false // звонки: фрагмент мог быть распознан неверно (по корректору)
+  } ],
+  "normalization": { "version": "n1-…", "model": "…", "created_at": "…" }   // null, если нормализации не было
 }
 ```
 

@@ -16,15 +16,22 @@ RULES_PATH = Path(__file__).resolve().parent.parent / "docs" / "rules.md"
 PROMPT_SCHEME = "v1"   # меняйте вручную при смысловой правке; хеш ниже ловит любую правку текста
 
 
-def prompt_version() -> str:
-    """Версия промпта для кэша оценок: схема + хеш этого файла и docs/rules.md."""
+def prompt_version(normalized: bool = False) -> str:
+    """Версия промпта для кэша оценок: схема + хеш этого файла и docs/rules.md;
+    для звонков с нормализацией — плюс версия корректора."""
     h = hashlib.sha256(Path(__file__).read_bytes() + RULES_PATH.read_bytes()).hexdigest()[:10]
-    return f"{PROMPT_SCHEME}-{h}"
+    base = f"{PROMPT_SCHEME}-{h}"
+    if normalized:
+        from backend.normalize import normalizer_version
+        return f"{base}+{normalizer_version()}"
+    return base
+
+
 FLAG_VIOLATION_TYPES = ["none", "insult", "off_platform_paid_service", "confidential_disclosure", "other"]
 
 SPEAKER_RU = {"client": "клиент", "operator": "оператор", "bot": "бот", "system": "система"}
 FLAG_RU = {"ivr": "IVR", "client_not_hearing": "клиент_не_слышит", "after_end": "после_завершения",
-           "dtmf": "DTMF", "duplicate": "дубль"}
+           "dtmf": "DTMF", "duplicate": "дубль", "asr_uncertain": "ASR_неуверенно"}
 
 BASE_SYSTEM = """Ты — эксперт отдела контроля качества контакт-центра брокерской компании Freedom Broker.
 Ты оцениваешь работу ОПЕРАТОРА в одном диалоге по ОДНОМУ критерию чек-листа.
@@ -70,10 +77,16 @@ CALL_RULES = """
   или словами оператора после того, как клиент назвал данные.
 """
 
+NORMALIZED_RULES = """- Строка «clean:» под репликой — текст после корректора распознавания; читай по ней, сверяясь
+  с оригиналом. Флаг ASR_неуверенно — фрагмент мог быть распознан неверно: не ставь оператору в вину
+  формулировки из таких фрагментов и не делай по ним выводов о раскрытии данных или ошибочном совете.
+"""
 
-def build_system(channel: str) -> str:
+
+def build_system(channel: str, normalized: bool = False) -> str:
     rules = RULES_PATH.read_text(encoding="utf-8").strip()
-    return BASE_SYSTEM + rules + "\n" + (CALL_RULES if channel == "voice call" else "")
+    call = (CALL_RULES + (NORMALIZED_RULES if normalized else "")) if channel == "voice call" else ""
+    return BASE_SYSTEM + rules + "\n" + call
 
 
 def _mmss(seconds: float) -> str:

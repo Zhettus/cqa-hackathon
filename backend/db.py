@@ -134,6 +134,17 @@ CREATE TABLE IF NOT EXISTS appeal_events (
 );
 CREATE INDEX IF NOT EXISTS ix_appeal_events ON appeal_events(appeal_id);
 
+-- Нормализация текста звонков моделью (этап 5): кэш по диалогу, хешу транскрипта, версии корректора и модели.
+CREATE TABLE IF NOT EXISTS normalizations (
+    conversation_id    TEXT NOT NULL,
+    text_hash          TEXT NOT NULL,
+    normalizer_version TEXT NOT NULL,
+    model              TEXT NOT NULL,
+    json               TEXT NOT NULL,          -- {"<idx>": {"text_clean": "...", "asr_uncertain": false}}
+    created_at         TEXT NOT NULL,
+    PRIMARY KEY (conversation_id, text_hash, normalizer_version, model)
+);
+
 -- Пакетная оценка: изменяемые таблицы прогресса (сами оценки — в evaluations, неизменяемы).
 CREATE TABLE IF NOT EXISTS batches (
     id                TEXT PRIMARY KEY,
@@ -790,3 +801,32 @@ def get_batch(conn: sqlite3.Connection, batch_id: str) -> dict:
 
 def list_batches(conn: sqlite3.Connection) -> list[dict]:
     return [_batch(conn, r, with_items=False) for r in conn.execute("SELECT * FROM batches ORDER BY rowid DESC")]
+
+
+# --- нормализация звонков (этап 5) ------------------------------------------------------------
+def get_normalization(conn: sqlite3.Connection, conversation_id: str, text_hash: str, normalizer_version: str,
+                      model: str) -> dict[int, dict] | None:
+    row = conn.execute("SELECT json FROM normalizations WHERE conversation_id = ? AND text_hash = ? AND "
+                       "normalizer_version = ? AND model = ?",
+                       (conversation_id, text_hash, normalizer_version, model)).fetchone()
+    return None if not row else {int(k): v for k, v in json.loads(row[0]).items()}
+
+
+def insert_normalization(conn: sqlite3.Connection, conversation_id: str, text_hash: str, normalizer_version: str,
+                         model: str, items: dict[int, dict]) -> None:
+    with conn:
+        conn.execute("INSERT OR REPLACE INTO normalizations(conversation_id, text_hash, normalizer_version, model, "
+                     "json, created_at) VALUES (?,?,?,?,?,?)",
+                     (conversation_id, text_hash, normalizer_version, model,
+                      _j({str(k): v for k, v in items.items()}), now()))
+
+
+def latest_normalization(conn: sqlite3.Connection, conversation_id: str, text_hash: str) -> dict | None:
+    """Последняя нормализация текущего текста диалога (любой версией/моделью) — для карточки в API."""
+    row = conn.execute("SELECT normalizer_version, model, json, created_at FROM normalizations WHERE "
+                       "conversation_id = ? AND text_hash = ? ORDER BY created_at DESC, rowid DESC LIMIT 1",
+                       (conversation_id, text_hash)).fetchone()
+    if not row:
+        return None
+    return {"version": row[0], "model": row[1], "created_at": row[3],
+            "items": {int(k): v for k, v in json.loads(row[2]).items()}}
