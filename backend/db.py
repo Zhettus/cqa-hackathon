@@ -122,6 +122,29 @@ CREATE TABLE IF NOT EXISTS appeal_decisions (
     reviewer        TEXT,
     decided_at      TEXT NOT NULL
 );
+
+-- Пакетная оценка: изменяемые таблицы прогресса (сами оценки — в evaluations, неизменяемы).
+CREATE TABLE IF NOT EXISTS batches (
+    id                TEXT PRIMARY KEY,
+    group_id          TEXT,
+    checklist_id      TEXT NOT NULL,
+    checklist_version INTEGER NOT NULL,
+    status            TEXT NOT NULL CHECK (status IN ('queued','running','completed','cancelled','failed')),
+    concurrency       INTEGER NOT NULL DEFAULT 4,
+    error             TEXT,
+    cancel_requested  INTEGER NOT NULL DEFAULT 0,
+    created_at        TEXT NOT NULL,
+    finished_at       TEXT
+);
+CREATE TABLE IF NOT EXISTS batch_items (
+    batch_id        TEXT NOT NULL REFERENCES batches(id),
+    conversation_id TEXT NOT NULL,
+    status          TEXT NOT NULL CHECK (status IN ('queued','running','completed','not_evaluable','failed','cancelled')),
+    evaluation_id   TEXT,
+    total           REAL,
+    error           TEXT,
+    PRIMARY KEY (batch_id, conversation_id)
+);
 """
 
 IMMUTABLE_TABLES = ["checklists", "evaluations", "criterion_results", "llm_calls", "appeals", "appeal_decisions"]
@@ -467,6 +490,11 @@ def list_appeals(conn: sqlite3.Connection, evaluation_id: str | None = None) -> 
 
 def _appeal(conn: sqlite3.Connection, row: sqlite3.Row) -> dict:
     d = dict(row)
+    ev = conn.execute("SELECT conversation_id FROM evaluations WHERE id = ?", (d["evaluation_id"],)).fetchone()
+    d["conversation_id"] = ev[0] if ev else None
+    cr = conn.execute("SELECT answer_json, points FROM criterion_results WHERE evaluation_id = ? AND criterion_id = ?",
+                      (d["evaluation_id"], d["criterion_id"])).fetchone()
+    d["original"] = {"answer": json.loads(cr["answer_json"]), "points": cr["points"]} if cr else None
     dec = conn.execute("SELECT * FROM appeal_decisions WHERE appeal_id = ?", (d["id"],)).fetchone()
     d["status"] = "decided" if dec else "open"
     d["decision"] = None if not dec else {
@@ -475,3 +503,223 @@ def _appeal(conn: sqlite3.Connection, row: sqlite3.Row) -> dict:
         "reason": dec["reason"], "reviewer": dec["reviewer"], "decided_at": dec["decided_at"],
     }
     return d
+
+
+def query_appeals(conn: sqlite3.Connection, *, status: str | None = None, evaluation_id: str | None = None,
+                  conversation_id: str | None = None, criterion_id: str | None = None) -> list[dict]:
+    sql = ("SELECT a.* FROM appeals a JOIN evaluations e ON e.id = a.evaluation_id "
+           "LEFT JOIN appeal_decisions d ON d.appeal_id = a.id WHERE 1=1")
+    args: list[Any] = []
+    if evaluation_id:
+        sql += " AND a.evaluation_id = ?"; args.append(evaluation_id)
+    if conversation_id:
+        sql += " AND e.conversation_id = ?"; args.append(conversation_id)
+    if criterion_id:
+        sql += " AND a.criterion_id = ?"; args.append(criterion_id)
+    if status == "open":
+        sql += " AND d.id IS NULL"
+    elif status == "decided":
+        sql += " AND d.id IS NOT NULL"
+    sql += " ORDER BY a.created_at, a.rowid"
+    return [_appeal(conn, r) for r in conn.execute(sql, args).fetchall()]
+
+
+# --- списки и сводки для REST API ----------------------------------------------------------
+def _open_appeals_by_evaluation(conn: sqlite3.Connection) -> dict[str, int]:
+    rows = conn.execute("SELECT a.evaluation_id, COUNT(*) FROM appeals a LEFT JOIN appeal_decisions d "
+                        "ON d.appeal_id = a.id WHERE d.id IS NULL GROUP BY a.evaluation_id").fetchall()
+    return {r[0]: r[1] for r in rows}
+
+
+def _eval_summary(row: sqlite3.Row, open_appeals: dict[str, int]) -> dict:
+    return {"id": row["id"], "status": row["status"], "status_reason": row["status_reason"],
+            "checklist": {"id": row["checklist_id"], "version": row["checklist_version"]},
+            "total": row["total"], "final_total": row["total"], "open_appeals": open_appeals.get(row["id"], 0),
+            "batch_id": row["batch_id"], "created_at": row["created_at"]}
+
+
+def latest_evaluations(conn: sqlite3.Connection, *, checklist_id: str | None = None,
+                       checklist_version: int | None = None, batch_id: str | None = None) -> dict[str, dict]:
+    """Последняя оценка каждого диалога (по порядку вставки), при необходимости — только с данным чек-листом."""
+    where, args = [], []
+    if checklist_id:
+        where.append("checklist_id = ?"); args.append(checklist_id)
+    if checklist_version is not None:
+        where.append("checklist_version = ?"); args.append(checklist_version)
+    if batch_id:
+        where.append("batch_id = ?"); args.append(batch_id)
+    cond = (" WHERE " + " AND ".join(where)) if where else ""
+    rows = conn.execute(
+        f"SELECT e.* FROM evaluations e JOIN (SELECT conversation_id, MAX(rowid) AS rid FROM evaluations{cond} "
+        f"GROUP BY conversation_id) m ON m.rid = e.rowid", args).fetchall()
+    opens = _open_appeals_by_evaluation(conn)
+    return {r["conversation_id"]: _eval_summary(r, opens) for r in rows}
+
+
+def query_evaluations(conn: sqlite3.Connection, *, conversation_id: str | None = None, batch_id: str | None = None,
+                      checklist_id: str | None = None, checklist_version: int | None = None,
+                      status: str | None = None, limit: int = 50, offset: int = 0) -> tuple[list[dict], int]:
+    """Оценки без criteria (поля объекта оценки), новые первыми."""
+    where, args = [], []
+    for col, val in (("conversation_id", conversation_id), ("batch_id", batch_id), ("checklist_id", checklist_id),
+                     ("checklist_version", checklist_version), ("status", status)):
+        if val is not None:
+            where.append(f"{col} = ?"); args.append(val)
+    cond = (" WHERE " + " AND ".join(where)) if where else ""
+    total = conn.execute(f"SELECT COUNT(*) FROM evaluations{cond}", args).fetchone()[0]
+    rows = conn.execute(f"SELECT * FROM evaluations{cond} ORDER BY rowid DESC LIMIT ? OFFSET ?",
+                        args + [limit, offset]).fetchall()
+    opens = _open_appeals_by_evaluation(conn)
+    items = []
+    for r in rows:
+        d = dict(r)
+        for k in ("sections", "flags", "facts"):
+            d[k] = json.loads(d.pop(f"{k}_json"))
+        d["checklist"] = {"id": d.pop("checklist_id"), "version": d.pop("checklist_version")}
+        d["model"] = {"provider": d.pop("model_provider"), "name": d.pop("model_name")}
+        d["final_total"] = d["total"]
+        d["open_appeals"] = opens.get(d["id"], 0)
+        d["cost"] = evaluation_cost(conn, d["id"])
+        items.append(d)
+    return items, total
+
+
+def query_llm_calls(conn: sqlite3.Connection, *, evaluation_id: str | None = None, batch_id: str | None = None,
+                    conversation_id: str | None = None, status: str | None = None,
+                    limit: int = 50, offset: int = 0) -> tuple[list[dict], int]:
+    where, args = [], []
+    for col, val in (("evaluation_id", evaluation_id), ("batch_id", batch_id), ("conversation_id", conversation_id),
+                     ("status", status)):
+        if val is not None:
+            where.append(f"{col} = ?"); args.append(val)
+    cond = (" WHERE " + " AND ".join(where)) if where else ""
+    total = conn.execute(f"SELECT COUNT(*) FROM llm_calls{cond}", args).fetchone()[0]
+    cols = ("id, evaluation_id, conversation_id, batch_id, attempt, provider, model, started_at, latency_ms, "
+            "tokens_in, tokens_out, cost_usd, status, validation_errors_json")
+    rows = conn.execute(f"SELECT {cols} FROM llm_calls{cond} ORDER BY started_at DESC, rowid DESC LIMIT ? OFFSET ?",
+                        args + [limit, offset]).fetchall()
+    items = []
+    for r in rows:
+        d = dict(r)
+        d["validation_errors"] = json.loads(d.pop("validation_errors_json"))
+        items.append(d)
+    return items, total
+
+
+def llm_calls_summary(conn: sqlite3.Connection, **filters) -> dict:
+    where, args = [], []
+    for col in ("evaluation_id", "batch_id", "conversation_id", "status"):
+        if filters.get(col) is not None:
+            where.append(f"{col} = ?"); args.append(filters[col])
+    cond = (" WHERE " + " AND ".join(where)) if where else ""
+    r = conn.execute(f"SELECT COUNT(*), COALESCE(SUM(tokens_in),0), COALESCE(SUM(tokens_out),0), "
+                     f"COALESCE(SUM(cost_usd),0), AVG(latency_ms), COALESCE(SUM(attempt > 1),0) "
+                     f"FROM llm_calls{cond}", args).fetchone()
+    by_model = conn.execute(f"SELECT provider, model, COUNT(*) AS calls, COALESCE(SUM(tokens_in),0) AS tokens_in, "
+                            f"COALESCE(SUM(tokens_out),0) AS tokens_out, COALESCE(SUM(cost_usd),0) AS cost_usd "
+                            f"FROM llm_calls{cond} GROUP BY provider, model ORDER BY calls DESC", args).fetchall()
+    return {"calls": r[0], "tokens_in": r[1], "tokens_out": r[2], "cost_usd": round(r[3], 6),
+            "avg_latency_ms": None if r[4] is None else int(r[4]), "retries": r[5],
+            "by_model": [dict(m) for m in by_model]}
+
+
+def dataset_stats(conn: sqlite3.Connection, group_id: str) -> dict:
+    channels = {r[0]: r[1] for r in conn.execute(
+        "SELECT channel, COUNT(*) FROM conversations WHERE group_id = ? GROUP BY channel", (group_id,))}
+    languages = {r[0]: r[1] for r in conn.execute(
+        "SELECT language, COUNT(*) FROM conversations WHERE group_id = ? GROUP BY language", (group_id,))}
+    evaluated = conn.execute("SELECT COUNT(DISTINCT e.conversation_id) FROM evaluations e JOIN conversations c "
+                             "ON c.conversation_id = e.conversation_id WHERE c.group_id = ?", (group_id,)).fetchone()[0]
+    return {"channels": channels, "languages": languages, "evaluated": evaluated}
+
+
+def search_conversations(conn: sqlite3.Connection, *, group_id: str | None = None, channel: str | None = None,
+                         language: str | None = None, q: str | None = None) -> list[dict]:
+    where, args = [], []
+    for col, val in (("group_id", group_id), ("channel", channel), ("language", language)):
+        if val is not None:
+            where.append(f"{col} = ?"); args.append(val)
+    if q:
+        where.append("(conversation_id LIKE ? OR transcript_json LIKE ?)")
+        args += [f"%{q}%", f"%{q}%"]
+    cond = (" WHERE " + " AND ".join(where)) if where else ""
+    return [_conv(r) for r in conn.execute(f"SELECT * FROM conversations{cond} ORDER BY group_id, conversation_id", args)]
+
+
+# --- пакеты -----------------------------------------------------------------------------
+BATCH_ITEM_DONE = ("completed", "not_evaluable", "failed", "cancelled")
+
+
+def insert_batch(conn: sqlite3.Connection, *, checklist_id: str, checklist_version: int,
+                 conversation_ids: list[str], group_id: str | None = None, concurrency: int = 4) -> dict:
+    bid = new_id("bt")
+    with conn:
+        conn.execute("INSERT INTO batches(id, group_id, checklist_id, checklist_version, status, concurrency, "
+                     "created_at) VALUES (?,?,?,?,?,?,?)",
+                     (bid, group_id, checklist_id, checklist_version, "queued", concurrency, now()))
+        conn.executemany("INSERT INTO batch_items(batch_id, conversation_id, status) VALUES (?,?,?)",
+                         [(bid, cid, "queued") for cid in conversation_ids])
+    return get_batch(conn, bid)
+
+
+def set_batch_status(conn: sqlite3.Connection, batch_id: str, status: str, *, error: str | None = None) -> None:
+    finished = now() if status in ("completed", "cancelled", "failed") else None
+    with conn:
+        conn.execute("UPDATE batches SET status = ?, error = COALESCE(?, error), finished_at = COALESCE(?, finished_at) "
+                     "WHERE id = ?", (status, error, finished, batch_id))
+
+
+def set_batch_item(conn: sqlite3.Connection, batch_id: str, conversation_id: str, status: str, *,
+                   evaluation_id: str | None = None, total: float | None = None, error: str | None = None) -> None:
+    with conn:
+        conn.execute("UPDATE batch_items SET status = ?, evaluation_id = ?, total = ?, error = ? "
+                     "WHERE batch_id = ? AND conversation_id = ?",
+                     (status, evaluation_id, total, error, batch_id, conversation_id))
+
+
+def request_batch_cancel(conn: sqlite3.Connection, batch_id: str) -> dict:
+    get_batch(conn, batch_id)
+    with conn:
+        conn.execute("UPDATE batches SET cancel_requested = 1 WHERE id = ?", (batch_id,))
+        conn.execute("UPDATE batch_items SET status = 'cancelled' WHERE batch_id = ? AND status = 'queued'", (batch_id,))
+        conn.execute("UPDATE batches SET status = 'cancelled', finished_at = ? WHERE id = ? "
+                     "AND status IN ('queued') ", (now(), batch_id))
+    return get_batch(conn, batch_id)
+
+
+def batch_cancel_requested(conn: sqlite3.Connection, batch_id: str) -> bool:
+    row = conn.execute("SELECT cancel_requested FROM batches WHERE id = ?", (batch_id,)).fetchone()
+    return bool(row and row[0])
+
+
+def _batch(conn: sqlite3.Connection, row: sqlite3.Row, with_items: bool) -> dict:
+    d = dict(row)
+    items = [dict(r) for r in conn.execute("SELECT conversation_id, status, evaluation_id, total, error FROM batch_items "
+                                           "WHERE batch_id = ? ORDER BY rowid", (d["id"],))]
+    counts = {s: sum(1 for i in items if i["status"] == s)
+              for s in ("queued", "running", "completed", "not_evaluable", "failed", "cancelled")}
+    total = len(items)
+    done = sum(counts[s] for s in BATCH_ITEM_DONE)
+    cost = conn.execute("SELECT COALESCE(SUM(tokens_in),0), COALESCE(SUM(tokens_out),0), COALESCE(SUM(cost_usd),0) "
+                        "FROM llm_calls WHERE batch_id = ?", (d["id"],)).fetchone()
+    out = {"batch_id": d["id"], "status": d["status"], "group_id": d["group_id"],
+           "checklist": {"id": d["checklist_id"], "version": d["checklist_version"]},
+           "created_at": d["created_at"], "finished_at": d["finished_at"], "error": d["error"],
+           "concurrency": d["concurrency"], "cancel_requested": bool(d["cancel_requested"]),
+           "progress": {"total": total, "done": done, **counts,
+                        "percent": round(done / total * 100, 2) if total else 100.0},
+           "cost": {"tokens_in": cost[0], "tokens_out": cost[1], "usd": round(cost[2], 6)}}
+    if with_items:
+        out["items"] = items
+    return out
+
+
+def get_batch(conn: sqlite3.Connection, batch_id: str) -> dict:
+    row = conn.execute("SELECT * FROM batches WHERE id = ?", (batch_id,)).fetchone()
+    if not row:
+        raise NotFound(f"пакет {batch_id} не найден")
+    return _batch(conn, row, with_items=True)
+
+
+def list_batches(conn: sqlite3.Connection) -> list[dict]:
+    return [_batch(conn, r, with_items=False) for r in conn.execute("SELECT * FROM batches ORDER BY rowid DESC")]
