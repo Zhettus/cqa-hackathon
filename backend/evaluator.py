@@ -116,7 +116,7 @@ class Evaluator:
                        checklist_version: int | None = None, *, votes: int | None = None,
                        batch_id: str | None = None, use_cache: bool = False) -> dict:
         """use_cache=True — вернуть готовую оценку с тем же ключом (диалог, версия чек-листа, версия промпта,
-        модель, голоса), если она есть. По умолчанию каждая оценка — новый вызов модели."""
+        модель, effort, голоса), если она есть. По умолчанию каждая оценка — новый вызов модели."""
         t0 = time.perf_counter()
         conv = db.get_conversation(self.conn, conversation_id)
         checklist = db.get_checklist(self.conn, checklist_id, checklist_version)
@@ -124,7 +124,7 @@ class Evaluator:
         pv = prompt_version()
         if use_cache:
             cached = db.find_cached_evaluation(self.conn, conversation_id, checklist["id"], checklist["version"],
-                                               pv, self.provider.model, n_votes)
+                                               pv, self.provider.model, n_votes, self.provider.effort)
             if cached:
                 return {**cached, "cached": True}
         settings = effective_settings(checklist)
@@ -132,7 +132,7 @@ class Evaluator:
         base = {"id": eid, "conversation_id": conversation_id, "checklist_id": checklist["id"],
                 "checklist_version": checklist["version"], "batch_id": batch_id, "facts": {},
                 "model_provider": self.provider.name, "model_name": self.provider.model,
-                "prompt_version": pv, "votes": n_votes}
+                "prompt_version": pv, "votes": n_votes, "effort": self.provider.effort}
         try:
             return await self._run(conv, checklist, settings, base, n_votes, t0)
         except LLMError as e:

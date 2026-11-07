@@ -78,6 +78,7 @@ class LLMProvider(ABC):
     def __init__(self, model: str, *, timeout_s: float = 120.0, max_retries: int = 3,
                  concurrency: int = 8, prices: Prices | None = None):
         self.model = model
+        self.effort: str | None = None      # глубина рассуждения (есть не у всех провайдеров); часть ключа кэша оценок
         self.timeout_s = timeout_s
         self.max_retries = max_retries
         self.prices = prices or Prices.from_env(model)

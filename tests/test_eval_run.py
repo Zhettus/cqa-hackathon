@@ -74,6 +74,11 @@ def test_cache_by_key(edge_records, monkeypatch):
     assert ev4["id"] != ev1["id"]
     ev5 = asyncio.run(Evaluator(conn, prov).evaluate("edge-ru-001"))                          # без кэша — новая
     assert ev5["id"] not in (ev1["id"], ev4["id"])
+    monkeypatch.undo()
+    prov.effort = "low"                                                                          # другой effort — новая
+    ev6 = asyncio.run(Evaluator(conn, prov).evaluate("edge-ru-001", use_cache=True))
+    assert ev6["id"] not in (ev1["id"], ev4["id"], ev5["id"]) and ev6["effort"] == "low"
+    assert asyncio.run(Evaluator(conn, prov).evaluate("edge-ru-001", use_cache=True))["id"] == ev6["id"]
 
 
 def test_migration_adds_columns(tmp_path):
@@ -85,7 +90,7 @@ def test_migration_adds_columns(tmp_path):
                     "duration_ms INTEGER, created_at TEXT);")
     db.init_db(c)
     cols = {r[1] for r in c.execute("PRAGMA table_info(evaluations)")}
-    assert {"prompt_version", "votes"} <= cols
+    assert {"prompt_version", "votes", "effort"} <= cols
 
 
 def test_failed_evaluation_counts_as_mismatch_everywhere():

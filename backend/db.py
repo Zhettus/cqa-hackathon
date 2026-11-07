@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS evaluations (
     model_name        TEXT,
     prompt_version    TEXT,
     votes             INTEGER,
+    effort            TEXT,
     batch_id          TEXT,
     duration_ms       INTEGER,
     created_at        TEXT NOT NULL,
@@ -173,7 +174,7 @@ def connect(path: str | Path = ":memory:") -> sqlite3.Connection:
     return conn
 
 
-MIGRATIONS = {"evaluations": {"prompt_version": "TEXT", "votes": "INTEGER"},
+MIGRATIONS = {"evaluations": {"prompt_version": "TEXT", "votes": "INTEGER", "effort": "TEXT"},
               "criterion_results": {"meta_json": "TEXT NOT NULL DEFAULT '{}'"}}
 
 
@@ -319,11 +320,11 @@ def insert_evaluation(conn: sqlite3.Connection, ev: dict, criteria: list[dict]) 
         conn.execute(
             "INSERT INTO evaluations(id, conversation_id, checklist_id, checklist_version, status, status_reason, "
             "total, sections_json, flags_json, facts_json, model_provider, model_name, prompt_version, votes, "
-            "batch_id, duration_ms, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "effort, batch_id, duration_ms, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (eid, ev["conversation_id"], ev["checklist_id"], ev["checklist_version"], ev["status"],
              ev.get("status_reason"), ev.get("total"), _j(ev.get("sections", [])), _j(ev.get("flags", [])),
              _j(ev.get("facts", {})), ev.get("model_provider"), ev.get("model_name"), ev.get("prompt_version"),
-             ev.get("votes"), ev.get("batch_id"),
+             ev.get("votes"), ev.get("effort"), ev.get("batch_id"),
              ev.get("duration_ms"), ev.get("created_at") or now()),
         )
         for c in criteria:
@@ -373,14 +374,14 @@ def evaluation_cost(conn: sqlite3.Connection, evaluation_id: str) -> dict:
 
 def find_cached_evaluation(conn: sqlite3.Connection, conversation_id: str, checklist_id: str,
                            checklist_version: int, prompt_version: str, model_name: str | None,
-                           votes: int) -> dict | None:
-    """Последняя успешная оценка с тем же ключом: диалог, версия чек-листа, версия промпта, модель, голоса.
-    not_evaluable кэшируется независимо от модели (LLM не вызывалась)."""
+                           votes: int, effort: str | None = None) -> dict | None:
+    """Последняя успешная оценка с тем же ключом: диалог, версия чек-листа, версия промпта, модель, effort,
+    голоса. not_evaluable кэшируется независимо от модели (LLM не вызывалась)."""
     row = conn.execute(
         "SELECT id FROM evaluations WHERE conversation_id = ? AND checklist_id = ? AND checklist_version = ? "
-        "AND prompt_version = ? AND ((status = 'completed' AND model_name = ? AND votes = ?) "
+        "AND prompt_version = ? AND ((status = 'completed' AND model_name = ? AND votes = ? AND effort IS ?) "
         "OR status = 'not_evaluable') ORDER BY created_at DESC, rowid DESC LIMIT 1",
-        (conversation_id, checklist_id, checklist_version, prompt_version, model_name, votes)).fetchone()
+        (conversation_id, checklist_id, checklist_version, prompt_version, model_name, votes, effort)).fetchone()
     return get_evaluation(conn, row[0]) if row else None
 
 
