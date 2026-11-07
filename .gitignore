@@ -8,3 +8,5 @@ data/*.db-*
 data/audio/
 data/eval_reports/
 ollama/measure.log
+*.zip
+tmp/

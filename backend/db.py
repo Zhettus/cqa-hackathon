@@ -633,10 +633,11 @@ def _open_appeals_by_evaluation(conn: sqlite3.Connection) -> dict[str, int]:
 
 
 def _eval_summary(row: sqlite3.Row, open_appeals: dict[str, int]) -> dict:
+    flags = [f["criterion_id"] for f in json.loads(row["flags_json"] or "[]") if f.get("answer") == "yes"]
     return {"id": row["id"], "status": row["status"], "status_reason": row["status_reason"],
             "checklist": {"id": row["checklist_id"], "version": row["checklist_version"]},
             "total": row["total"], "final_total": row["total"], "open_appeals": open_appeals.get(row["id"], 0),
-            "batch_id": row["batch_id"], "created_at": row["created_at"]}
+            "flags": flags, "batch_id": row["batch_id"], "created_at": row["created_at"]}
 
 
 def latest_evaluations(conn: sqlite3.Connection, *, checklist_id: str | None = None,

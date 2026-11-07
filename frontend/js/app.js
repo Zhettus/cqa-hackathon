@@ -20,6 +20,5 @@ CQA.pages.appeals = CQA.pages.appeals || CQA.pages.soon('Апелляции', '�
   document.querySelectorAll('.lang button').forEach(b => b.addEventListener('click', () => CQA.i18n.set(b.textContent.trim())));
   CQA.i18n.start();
   CQA.ui.tips();
-  if (CQA.config.USE_MOCK) document.getElementById('mockBadge').hidden = false;
   route();
 })();

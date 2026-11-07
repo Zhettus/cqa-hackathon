@@ -1,6 +1,6 @@
 /* Компоненты. Цвета и шрифты — в tokens.css */
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Inter,system-ui,sans-serif;color:var(--text);background:#fff;font-size:14px;overflow-x:hidden}
+body{font-family:var(--body);color:var(--text);background:#fff;font-size:14px;overflow-x:hidden}
 button{font:inherit;cursor:pointer}
 .wrap{max-width:1280px;margin:0 auto;padding:0 40px}
 
@@ -68,7 +68,7 @@ nav .wrap{display:flex;align-items:center;gap:48px;height:64px}
 .ring .num{font:800 42px var(--head);letter-spacing:-.02em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .ring small{color:var(--muted);font-size:12px}
 .glass .cap{font-size:13px;color:var(--muted)}
-.delta{position:absolute;top:-6px;right:-14px;font:700 13px Inter;padding:5px 9px;border-radius:999px;opacity:0;transform:translateY(8px) scale(.9);transition:all .4s var(--ease)}
+.delta{position:absolute;top:-6px;right:-14px;font:700 13px var(--body);padding:5px 9px;border-radius:999px;opacity:0;transform:translateY(8px) scale(.9);transition:all .4s var(--ease)}
 .delta.show{opacity:1;transform:none}
 .delta.neg{background:#FDE6E7;color:var(--red)} .delta.pos{background:#E3F7EC;color:var(--green-d)}
 
@@ -120,10 +120,10 @@ main.two{display:grid;grid-template-columns:5fr 7fr;gap:20px;margin-bottom:60px}
 .panel{background:#fff;border:1px solid var(--line);border-radius:24px;padding:24px;opacity:0;translate:0 18px;animation:in .6s var(--ease) .25s forwards}
 .panel + .panel{animation-delay:.32s}
 .panel h2{font:800 20px var(--head);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:10px}
-.seg{display:flex;background:var(--card);border-radius:10px;padding:3px;font-family:Inter}
+.seg{display:flex;background:var(--card);border-radius:10px;padding:3px;font-family:var(--body)}
 .seg button{border:0;background:none;padding:5px 10px;border-radius:8px;font-size:12px;font-weight:500;color:var(--muted);transition:all .25s var(--ease)}
 .seg button.on{background:#fff;color:var(--text);box-shadow:0 1px 4px rgba(20,40,60,.1)}
-.reset{font:500 12px Inter;color:var(--green-d);background:none;border:0;opacity:0;pointer-events:none;transition:opacity .25s}
+.reset{font:500 12px var(--body);color:var(--green-d);background:none;border:0;opacity:0;pointer-events:none;transition:opacity .25s}
 .reset.show{opacity:1;pointer-events:auto}
 
 .chat{display:flex;flex-direction:column;gap:10px;max-height:560px;overflow:auto;padding-right:4px}
@@ -184,7 +184,7 @@ main.two{display:grid;grid-template-columns:5fr 7fr;gap:20px;margin-bottom:60px}
 
 /* ---------- общее для SPA ---------- */
 a.logo{color:inherit;text-decoration:none}
-.mock{font:600 11px Inter;padding:5px 10px;border-radius:999px;background:#FDF1DA;color:#B07208;margin-right:8px}
+.mock{font:600 11px var(--body);padding:5px 10px;border-radius:999px;background:#FDF1DA;color:#B07208;margin-right:8px}
 .loading{padding:60px 0;text-align:center;color:var(--muted)}
 .empty{max-width:520px;margin:80px auto;text-align:center;padding:48px;border-radius:var(--r-lg);background:var(--card)}
 .empty h2{font:800 26px var(--head);margin-bottom:10px}
@@ -489,3 +489,29 @@ textarea.err,input.err{border-color:var(--red)!important;box-shadow:0 0 0 3px rg
 .miss a:hover{background:#EDF2F8;transform:translateX(3px)}
 .miss .vs{display:flex;gap:6px}
 @media (max-width:1000px){.an-two{grid-template-columns:1fr}.cbar,.gb{grid-template-columns:28px 1fr 60px}.cbar .cb-track,.gb .mini{grid-column:1/-1}.gt-sum{grid-template-columns:1fr}.gt-facts{grid-template-columns:1fr 1fr}.optable .oh{display:none}}
+
+/* ===== интеграция с бэкендом CQA: флаги реплик, очищенный текст, доказательства, статусы ===== */
+.msg.dimmed .b,.msg.dimmed .who{opacity:.45}
+.msg.dimmed .b{background:#f7f8fb;border-style:dashed}
+.msg .flag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:600;background:#EEF1F8;color:var(--muted);vertical-align:middle}
+.msg .flag.warn{background:#FDF1DA;color:#B07208}
+.msg.seek .who{cursor:pointer}.msg.seek .who:hover{color:var(--blue)}
+.msg .alt{display:none;margin-top:6px;font-size:12px;color:var(--muted)}
+.chat.show-clean .msg .b .orig{display:none}.chat.show-clean .msg .b .cl{display:block}
+.chat .msg .b .cl{display:none}
+.quote .range{color:var(--muted)}
+.guard{margin-top:8px;padding:8px 10px;border-radius:10px;background:#EEF4FF;color:#3C4FC4;font-size:12px}
+.guard b{font-weight:600}
+.conf{font-size:11px;color:var(--muted);margin-left:6px}
+.st-note{padding:14px 16px;border-radius:14px;background:#FDF1DA;color:#6B4A05;margin-top:12px}
+.st-note.bad{background:#FDE8E9;color:#8A1C22}
+.pill.err{background:#FDE8E9;color:#8A1C22}
+.ref{width:100%;min-height:120px;font:13px/1.45 var(--body);padding:10px;border:1px solid var(--line);border-radius:10px;resize:vertical}
+.vers{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.vers button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 10px;font-size:12px}
+.vers button.on{background:var(--text);color:#fff;border-color:var(--text)}
+.ro-note{font-size:12px;color:var(--muted);margin:6px 0}
+.final-chip{display:inline-block;margin:6px 0;padding:6px 12px;border-radius:999px;background:#E8F8EF;color:#146B3A;font-size:12px;font-weight:600}
+.hist.inrev{border-left:3px solid var(--amber)}
+.mini-btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 8px;font-size:12px;cursor:pointer}
+.mini-btn.on{background:var(--text);color:#fff}

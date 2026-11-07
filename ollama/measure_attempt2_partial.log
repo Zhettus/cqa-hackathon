@@ -1,0 +1,3 @@
+=== 2026-11-08 02:49:17 mode=per_dialog model=cqa-qwen14b edge ===
+Модель openai/cqa-qwen14b, голосов 1, промпт v1-d4b1c3ec8a|dialog, чек-лист v1, диалогов 12, режим per_dialog, нормализация звонков: нет
+  [1/12] edge-ru-001: completed 88.75

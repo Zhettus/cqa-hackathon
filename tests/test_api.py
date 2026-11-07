@@ -47,7 +47,13 @@ def test_health_meta_and_ui(client):
     assert m["prompt_version"].startswith("v1-") and m["prompt_version_normalized"].startswith(m["prompt_version"] + "+")
     assert m["checklists"] == [{"id": "chat-quality", "version": 1}] and isinstance(m["votes"], int)
     assert m["normalize_calls"] in (True, False)
-    assert client.get("/ui/").status_code == 200 and client.get("/", follow_redirects=False).status_code == 307
+    r = client.get("/")
+    assert r.status_code == 200 and "<!DOCTYPE html>" in r.text[:200] and "js/app.js" in r.text
+    assert client.get("/ui/", follow_redirects=False).status_code == 307
+    assert client.get("/js/api.js").status_code == 200 and client.get("/css/tokens.css").status_code == 200
+    assert client.get("/nope.js").status_code == 404
+    # CORS включается только через CORS_ORIGINS
+    assert "access-control-allow-origin" not in {k.lower() for k in client.get("/api/health", headers={"Origin": "http://x"}).headers}
 
 
 def test_error_shape(client):
@@ -324,3 +330,14 @@ def test_llm_calls(client):
     s = client.get("/api/llm-calls/summary", params={"conversation_id": "edge-ru-001"}).json()
     assert s["calls"] == 9 and s["retries"] == 1 and s["by_model"][0]["model"] == "test-model" and s["cost_usd"] > 0
     assert client.get("/api/llm-calls/llm_nope").status_code == 404
+
+
+def test_cors_from_env(tmp_path, monkeypatch):
+    monkeypatch.setenv("CORS_ORIGINS", "https://org.crm.dynamics.com, http://localhost:5500")
+    app = create_app(db_path=tmp_path / "c.db", data_dir=ROOT / "data", provider=ScriptedProvider({}))
+    with TestClient(app) as c:
+        r = c.get("/api/health", headers={"Origin": "https://org.crm.dynamics.com"})
+        assert r.headers.get("access-control-allow-origin") == "https://org.crm.dynamics.com"
+        r = c.options("/api/evaluations", headers={"Origin": "http://localhost:5500", "Access-Control-Request-Method": "POST"})
+        assert r.status_code == 200 and "POST" in r.headers.get("access-control-allow-methods", "")
+        assert c.get("/api/health", headers={"Origin": "http://evil"}).headers.get("access-control-allow-origin") is None

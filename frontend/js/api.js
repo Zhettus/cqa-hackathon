@@ -1,171 +1,232 @@
 /* =========================================================
-   ЕДИНСТВЕННАЯ точка связи фронта с бэком.
-   Страницы вызывают только CQA.api.*, ничего не знают про fetch.
-   Если на бэке назовут поля иначе — правим только normalize* ниже.
+   ЕДИНСТВЕННАЯ точка связи фронта с бэком (docs/api_contract.md).
+   Страницы вызывают только CQA.api.*, ничего не знают про fetch и формат бэка.
+   Все данные — из API; заготовленных результатов нет.
    ========================================================= */
 CQA.api = (() => {
   const cfg = CQA.config;
   let checklistCache = null;
 
-  /* ---------- приведение ответов бэка к формату фронта ---------- */
+  /* ---------- HTTP ---------- */
+  async function http(method, path, body) {
+    const r = await fetch(cfg.API_BASE + path, {
+      method, headers: body !== undefined ? { 'Content-Type': 'application/json' } : {},
+      body: body !== undefined ? JSON.stringify(body) : undefined
+    });
+    if (!r.ok) {
+      let msg = `${method} ${path} → ${r.status}`;
+      try {
+        const j = await r.json();
+        if (j.error) {
+          msg = j.error.message || msg;
+          const errs = j.error.details && j.error.details.errors;
+          if (Array.isArray(errs) && errs.length) msg += ': ' + errs.map(e => `${e.path}: ${e.message}`).join('; ');
+        }
+      } catch (_) { /* не JSON */ }
+      const err = new Error(msg); err.status = r.status; throw err;
+    }
+    return r.status === 204 ? null : r.json();
+  }
+  const q = encodeURIComponent;
+
+  /* ---------- значения ответов: бэк yes|no|na|число ↔ интерфейс Да|Нет|N/A|число ---------- */
+  const toUi = a => a === 'yes' ? 'Да' : a === 'no' ? 'Нет' : a === 'na' ? 'N/A' : (a === null || a === undefined ? null : a);
+  const toApi = a => a === 'Да' ? 'yes' : a === 'Нет' ? 'no' : a === 'N/A' ? 'na' : a;
+  const TYPE_UI = { binary: 'yes_no', scale: 'scale', flag: 'flag' };
+  const TYPE_API = { yes_no: 'binary', scale: 'scale', flag: 'flag' };
+
   function fmtTime(ts) {
     if (!ts) return '';
     const m = /T(\d{2}:\d{2}:\d{2})/.exec(ts);          // звонки: ISO 8601 → 10:01:30
     return m ? m[1] : ts;                                // чаты: MM:SS как есть
   }
-  function normalizeCriterion(c) {
-    const legacyNa = c.type === 'yes_no_na';             // на случай старого формата
-    const type = legacyNa ? 'yes_no' : (c.type || 'yes_no');
-    return {
-      id: String(c.id), section: +(c.section ?? 0), title: c.title || '', description: c.description || '',
-      type, weight: +(c.weight ?? 0),
-      steps: type === 'scale' ? (c.steps || [0, 5, 10]).map(Number) : undefined,
-      step_labels: c.step_labels || {},
-      na_allowed: legacyNa || !!c.na_allowed, na_channels: c.na_channels || [], na_rule: c.na_rule || ''
-    };
-  }
+
+  /* ---------- чек-лист: контракт → формат экранов и обратно ---------- */
   function normalizeChecklist(raw) {
-    return { version: raw.version ?? 1, sections: raw.sections || ['Критерии'], criteria: (raw.criteria || []).map(normalizeCriterion) };
-  }
-  function normalizeDialog(raw, checklist) {
-    const results = Object.fromEntries((raw.criteria || []).map(c => [String(c.id), c]));
-    const criteria = checklist.criteria.map(def => {
-      const r = results[def.id] || {};
-      const answer = r.answer === undefined ? null : (def.type === 'scale' && r.answer !== 'N/A' && r.answer !== null ? +r.answer : r.answer);
-      return { ...def, answer,
-        evidence: Array.isArray(r.evidence) ? r.evidence.map(Number) : (r.evidence ? [+r.evidence] : []),
-        why: r.explanation || r.na_reason || (answer === null ? 'Критерий ещё не оценён по этому диалогу — нажмите «Применить к набору» в чек-листе.' : '') };
-    });
-    const calc = CQA.scoring.total(criteria);
+    const sectionIds = (raw.sections || []).map(s => s.id);
     return {
-      id: raw.id || raw.conversation_id, channel: raw.channel, language: raw.language, operator: raw.operator || '',
-      audio_url: raw.audio_url || null, checklist_version: raw.checklist_version,
-      transcript: (raw.transcript || []).map((m, k) => ({ i: m.i ?? k + 1, t: fmtTime(m.timestamp), s: m.speaker, x: m.text })),
-      criteria, sections: checklist.sections,
-      total: calc.total,                                  // считаем по чек-листу (бэк может прислать свой total — сверим)
-      backend_total: raw.total,
-      gross: raw.gross_violation ?? CQA.scoring.gross(criteria)
+      id: raw.id, name: raw.name, version: raw.version, is_latest: raw.is_latest, created_at: raw.created_at,
+      author: raw.author, comment: raw.comment, settings: raw.settings || {},
+      sections: (raw.sections || []).map(s => s.title), sectionIds,
+      criteria: (raw.criteria || []).map(c => {
+        const steps = c.type === 'scale' ? (c.scale || []).map(s => +s.value).sort((a, b) => a - b) : undefined;
+        const step_labels = {}; (c.scale || []).forEach(s => { step_labels[s.value] = s.description || ''; });
+        return {
+          id: c.id, section: Math.max(0, sectionIds.indexOf(c.section)), section_id: c.section,
+          title: c.title || '', description: c.description || '', type: TYPE_UI[c.type] || 'yes_no',
+          weight: +(c.weight ?? 0), steps, step_labels,
+          na_allowed: !!c.na_allowed, na_rule: c.na_condition || '', na_channels: [],
+          reference: c.reference || '', guards: c.guards, hints: c.hints
+        };
+      })
     };
+  }
+  function denormalizeChecklist(cl) {
+    const ids = cl.sectionIds || cl.sections.map((_, i) => 's' + i);
+    return {
+      id: cl.id || cfg.CHECKLIST_ID, name: cl.name || 'Чек-лист качества чатов', settings: cl.settings || {},
+      sections: cl.sections.map((title, i) => ({ id: ids[i] || 's' + i, title })),
+      criteria: cl.criteria.map(c => {
+        const o = { id: c.id, section: ids[c.section] || ids[0], title: c.title, type: TYPE_API[c.type] || 'binary',
+                    weight: c.type === 'flag' ? 0 : +c.weight, na_allowed: c.type === 'flag' ? false : !!c.na_allowed,
+                    description: c.description || '' };
+        if (o.na_allowed) o.na_condition = c.na_rule || '';
+        if (o.type === 'scale') o.scale = [...new Set((c.steps || []).map(Number))].sort((a, b) => b - a)
+          .map(v => ({ value: v, description: (c.step_labels || {})[v] || '' }));
+        if (c.reference && c.reference.trim()) o.reference = c.reference;
+        if (c.guards) o.guards = c.guards;
+        if (c.hints) o.hints = c.hints;
+        return o;
+      })
+    };
+  }
+
+  /* ---------- оценка + диалог → объект карточки ---------- */
+  function normalizeEvaluationCriteria(ev, checklist) {
+    const byId = Object.fromEntries((ev.criteria || []).map(c => [c.criterion_id, c]));
+    return checklist.criteria.map(def => {
+      const r = byId[def.id];
+      if (!r) return { ...def, answer: null, why: '', evidence: [], quotes: [], range: null, na_reason: '', guards: [], points: null, applicable: false };
+      const evd = r.evidence || {};
+      const quotes = (evd.quotes || []).map(x => ({ n: x.n, text: x.text, model_quote: x.model_quote }));
+      return { ...def, weight: +(r.weight ?? def.weight), answer: toUi(r.answer), why: r.explanation || '',
+        evidence: quotes.map(x => x.n), quotes, range: evd.range || null, na_reason: evd.na_condition || '',
+        evidence_kind: evd.kind, guards: r.guards || [], hints: r.hints || [], confidence: r.confidence,
+        votes: r.votes || [], model_answer: toUi(r.model_answer), violation_type: r.violation_type,
+        points: r.points, applicable: !!r.applicable };
+    });
+  }
+  function normalizeDialog(conv, ev, checklist, appeals, final) {
+    const transcript = (conv.messages || []).map(m => ({
+      i: m.n, t: fmtTime(m.timestamp), s: m.speaker, x: m.text, clean: m.text_clean || null,
+      flags: m.flags || [], segment: m.segment, counts: m.counts_for_operator, event: m.event, offset: m.audio_offset_s
+    }));
+    const base = {
+      id: conv.conversation_id, group_id: conv.group_id, channel: conv.channel, language: conv.language,
+      audio_url: conv.audio ? conv.audio.url : null, facts: conv.facts || {}, normalization: conv.normalization || null,
+      transcript, sections: checklist.sections, appeals: appeals || []
+    };
+    if (!ev) return { ...base, status: 'pending', evaluation_id: null, criteria: [], total: null, final_total: null, gross: false, flags: [] };
+    const criteria = ev.status === 'completed' ? normalizeEvaluationCriteria(ev, checklist) : [];
+    return { ...base, status: ev.status === 'completed' ? 'evaluated' : ev.status, status_reason: ev.status_reason || null,
+      evaluation_id: ev.id, checklist_version: ev.checklist && ev.checklist.version, created_at: ev.created_at,
+      model: ev.model, prompt_version: ev.prompt_version, votes: ev.votes, cost: ev.cost,
+      criteria, total: ev.total, final_total: final ? final.total : (ev.final_total ?? ev.total), final: final || null,
+      sectionScores: ev.sections || [], flags: (ev.flags || []).filter(f => f.answer === 'yes').map(f => f.criterion_id),
+      gross: (ev.flags || []).some(f => f.answer === 'yes') };
   }
   function normalizeAppeal(a) {
+    const resolved = a.status === 'confirmed' || a.status === 'changed';
     return {
-      id: a.id, dialog_id: a.dialog_id, criterion_id: String(a.criterion_id), comment: a.comment || '',
-      proposed: a.proposed_answer ?? null, status: a.status || 'open', created_at: a.created_at || null,
-      original: a.original || {}, original_total: a.original_total ?? a.original?.total ?? null,
-      decision: a.decision || null, final_total: a.final_total ?? null
+      id: a.id, evaluation_id: a.evaluation_id, dialog_id: a.conversation_id, criterion_id: a.criterion_id,
+      comment: a.comment || '', author: a.author || '', created_at: a.created_at || null,
+      status: resolved ? 'resolved' : 'open', status_raw: a.status, events: a.events || [],
+      original: { answer: toUi(a.original && a.original.answer), points: a.original ? a.original.points : null },
+      decision: a.decision ? { action: a.decision.decision, answer: toUi(a.decision.new_answer ?? (a.original && a.original.answer)),
+                               reason: a.decision.reason || '', reviewer: a.decision.reviewer || '', decided_at: a.decision.decided_at } : null,
+      original_total: null, final_total: null                   // заполняются страницами из оценки и final
     };
   }
 
-  /* ---------- настоящий бэк (FastAPI) ---------- */
-  async function http(method, path, body) {
-    const r = await fetch(cfg.API_BASE + path, {
-      method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined
-    });
-    if (!r.ok) throw new Error(`${method} ${path} → ${r.status}`);
-    return r.json();
-  }
-  const q = encodeURIComponent;
-  const real = {
-    async getChecklist() { return (checklistCache = normalizeChecklist(await http('GET', '/api/checklist'))); },
-    async saveChecklist(cl) { return (checklistCache = normalizeChecklist(await http('PUT', '/api/checklist', cl))); },
-    getDialogs: g => http('GET', `/api/dialogs?group_id=${q(g)}`),
-    evaluate: (g, criteria) => http('POST', '/api/evaluate', criteria ? { group_id: g, criteria } : { group_id: g }),
-    getProgress: g => http('GET', `/api/progress?group_id=${q(g)}`),
-    async getDialog(id) { return normalizeDialog(await http('GET', `/api/dialogs/${q(id)}`), checklistCache || await real.getChecklist()); },
-    async getAllResults(g) {
-      const cl = checklistCache || await real.getChecklist();
-      try { return (await http('GET', `/api/results?group_id=${q(g)}`)).map(r => normalizeDialog(r, cl)); }
-      catch (e) {                                         // нет /api/results — собираем по одному диалогу
-        const list = (await real.getDialogs(g)).filter(d => d.status === 'evaluated');
-        const out = [];
-        for (let i = 0; i < list.length; i += 8)
-          out.push(...await Promise.all(list.slice(i, i + 8).map(d => real.getDialog(d.id).catch(() => null))));
-        return out.filter(Boolean);
-      }
-    },
-    async getAppeals() { return (await http('GET', '/api/appeals')).map(normalizeAppeal); },
-    async createAppeal(body) { return normalizeAppeal(await http('POST', '/api/appeals', body)); },
-    async decideAppeal(id, body) {
-      const res = await http('POST', `/api/appeals/${q(id)}/decision`, body);
-      return { appeal: normalizeAppeal(res.appeal), dialog: normalizeDialog(res.result, checklistCache || await real.getChecklist()) };
-    }
-  };
+  /* ---------- API ---------- */
+  const api = {
+    toUi, toApi, fmtTime,
+    getMeta: () => http('GET', '/api/meta'),
 
-  /* ---------- тестовый режим ---------- */
-  const M = CQA.mock, store = {}, appeals = [], progress = { done: 0, total: 0 };
-  const cl = () => normalizeChecklist(M.checklist);
-  M.records.forEach(r => store[r.conversation_id] = M.evaluate(r, cl()));
-  progress.done = progress.total = M.records.length;
-  const wait = ms => new Promise(r => setTimeout(r, ms));
-  const clone = o => JSON.parse(JSON.stringify(o));
-
-  const mock = {
-    async getChecklist() { await wait(80); return (checklistCache = cl()); },
-    async saveChecklist(next) {
-      await wait(200);
-      M.checklist = { ...clone(next), version: (M.checklist.version || 1) + 1 };
-      return (checklistCache = cl());
+    // чек-листы с версиями
+    async getChecklist(version) {
+      const path = version ? `/api/checklists/${q(cfg.CHECKLIST_ID)}/versions/${version}` : `/api/checklists/${q(cfg.CHECKLIST_ID)}`;
+      const cl = normalizeChecklist(await http('GET', path));
+      if (!version) checklistCache = cl;
+      return cl;
     },
-    async getDialogs() {
-      await wait(100);
-      return M.records.map(r => {
-        const res = store[r.conversation_id], d = res && normalizeDialog(res, cl());
-        return { id: r.conversation_id, channel: r.channel, language: r.language, operator: r.operator,
-                 total: d ? d.total : null, gross: d ? d.gross : false, status: d ? 'evaluated' : 'pending',
-                 has_appeal: appeals.some(a => a.dialog_id === r.conversation_id && a.status === 'open') };
+    checklist: async () => checklistCache || api.getChecklist(),
+    getChecklistVersions: () => http('GET', `/api/checklists/${q(cfg.CHECKLIST_ID)}/versions`),
+    getChecklistDiff: (a, b) => http('GET', `/api/checklists/${q(cfg.CHECKLIST_ID)}/versions/${a}/diff/${b}`),
+    validateChecklist: cl => http('POST', '/api/checklists/validate', denormalizeChecklist(cl)),
+    async saveChecklist(cl, { base_version, author, comment } = {}) {
+      const body = { ...denormalizeChecklist(cl), base_version, author: author || cfg.REVIEWER, comment: comment || '' };
+      return (checklistCache = normalizeChecklist(await http('POST', `/api/checklists/${q(cfg.CHECKLIST_ID)}/versions`, body)));
+    },
+
+    // наборы и диалоги
+    importDataset: (group, prefer = 'remote') => http('POST', '/api/datasets/import', { group_id: group, prefer }),
+    getDatasets: () => http('GET', '/api/datasets'),
+    async getDialogs(group) {
+      const r = await http('GET', `/api/conversations?group_id=${q(group)}&limit=500`);
+      return (r.items || []).map(d => {
+        const ev = d.latest_evaluation;
+        return { id: d.conversation_id, channel: d.channel, language: d.language, messages: d.messages,
+          operator_messages: d.operator_messages, has_audio: d.has_audio,
+          evaluation_id: ev ? ev.id : null, checklist_version: ev ? ev.checklist.version : null,
+          total: ev ? ev.total : null, final_total: ev ? ev.final_total : null,
+          status: !ev ? 'pending' : ev.status === 'completed' ? 'evaluated' : ev.status,   // evaluated | not_evaluable | failed | pending
+          status_reason: ev ? ev.status_reason : null, gross: !!(ev && ev.flags && ev.flags.length),
+          flags: ev ? ev.flags || [] : [], has_appeal: !!(ev && ev.open_appeals) };
       });
     },
-    async evaluate(g, onlyIds) {
-      const partial = Array.isArray(onlyIds) && onlyIds.length;
-      if (!partial) M.records.forEach(r => delete store[r.conversation_id]);
-      progress.done = 0; progress.total = M.records.length;
-      let k = 0;
-      const tick = setInterval(() => {
-        const r = M.records[k++];
-        store[r.conversation_id] = M.evaluate(r, cl(), partial ? onlyIds : null, store[r.conversation_id]);
-        progress.done = k;
-        if (k >= M.records.length) clearInterval(tick);
-      }, partial ? 140 : 260);
-      return { started: true };
+
+    // оценка: один диалог синхронно, набор — пакетом с прогрессом
+    evaluateOne: (conversation_id, version) => http('POST', '/api/evaluations',
+      { conversation_id, checklist_id: cfg.CHECKLIST_ID, checklist_version: version || null }),
+    startBatch: (group, { version, only_not_evaluated = false, concurrency = 4 } = {}) => http('POST', '/api/batches',
+      { group_id: group, checklist_id: cfg.CHECKLIST_ID, checklist_version: version || null, only_not_evaluated, concurrency }),
+    async getBatch(id) {
+      const b = await http('GET', `/api/batches/${q(id)}`);
+      const p = b.progress || {};
+      return { ...b, done: p.done || 0, total: p.total || 0, finished: ['completed', 'cancelled', 'failed'].includes(b.status) };
     },
-    async getProgress() { return { ...progress }; },
-    async getDialog(id) {
-      await wait(120);
-      if (!store[id]) throw new Error('Диалог ещё не оценён');
-      return normalizeDialog(clone(store[id]), cl());
+
+    // карточка: диалог + последняя (или указанная) оценка + апелляции + финальный итог
+    async getDialog(id, evaluationId) {
+      const cl = await api.checklist();
+      const conv = await http('GET', `/api/conversations/${q(id)}`);
+      let evId = evaluationId;
+      if (!evId) {
+        const list = await http('GET', `/api/evaluations?conversation_id=${q(id)}&limit=1`);
+        evId = list.items && list.items.length ? list.items[0].id : null;
+      }
+      if (!evId) return normalizeDialog(conv, null, cl, [], null);
+      const full = await http('GET', `/api/evaluations/${q(evId)}`);
+      const appeals = (full.appeals || []).map(normalizeAppeal);
+      const d = normalizeDialog(conv, full.evaluation, cl, appeals, full.final);
+      appeals.forEach(a => { a.original_total = d.total; a.final_total = d.final_total; });
+      return d;
     },
-    async getAllResults() { await wait(150); return Object.values(store).map(r => normalizeDialog(clone(r), cl())); },
-    // только для демо: «эталон», который отличается от ответов системы в ~12% случаев
-    demoGroundTruth() {
-      const rnd = (() => { let h = 7; return () => ((h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0) / 4294967296); })();
-      return Object.values(store).map(r => ({ conversation_id: r.id, criteria: Object.fromEntries(r.criteria.map(c => {
-        const def = cl().criteria.find(d => d.id === c.id); if (!def) return [c.id, c.answer];
-        if (rnd() > .12) return [c.id, c.answer];
-        const opts = CQA.scoring.options(def, r.channel).filter(o => o != c.answer);
-        return [c.id, opts[Math.floor(rnd() * opts.length)] ?? c.answer];
-      })) }));
+
+    // результаты набора (для аналитики): строки с ответами по критериям
+    async getAllResults(group) {
+      const cl = await api.checklist();
+      const r = await http('GET', `/api/results?group_id=${q(group)}&checklist_id=${q(cfg.CHECKLIST_ID)}`);
+      return (r.items || []).map(row => ({
+        id: row.conversation_id, channel: row.channel, language: row.language, status: row.status, evaluation_id: row.evaluation_id,
+        total: row.total, final_total: row.final_total, gross: (row.flags || []).length > 0, flags: row.flags || [],
+        criteria: cl.criteria.map(def => ({ ...def, answer: toUi(row.answers ? row.answers[def.id] : null),
+                                           final_answer: toUi(row.final_answers ? row.final_answers[def.id] : null) }))
+      }));
     },
-    async getAppeals() { await wait(100); return appeals.map(a => normalizeAppeal(clone(a))); },
-    async createAppeal({ dialog_id, criterion_id, comment, proposed_answer }) {
-      await wait(200);
-      const d = normalizeDialog(clone(store[dialog_id]), cl()), c = d.criteria.find(x => x.id === criterion_id);
-      const a = { id: appeals.length + 1, dialog_id, criterion_id, comment, proposed_answer, status: 'open',
-                  created_at: new Date().toISOString(),
-                  original: { answer: c.answer, points: CQA.scoring.applicable(c) ? CQA.scoring.r2(CQA.scoring.points(c)) : null, explanation: c.why },
-                  original_total: d.total, decision: null, final_total: null };
-      appeals.push(a);
-      return normalizeAppeal(clone(a));
+
+    // апелляции
+    async getAppeals(filters = {}) {
+      const qs = Object.entries(filters).filter(([, v]) => v).map(([k, v]) => `${k}=${q(v)}`).join('&');
+      const r = await http('GET', '/api/appeals' + (qs ? '?' + qs : ''));
+      return (r.items || []).map(normalizeAppeal);
     },
-    async decideAppeal(id, { action, answer, reason }) {
-      await wait(250);
-      const a = appeals.find(x => x.id == id);
-      const res = store[a.dialog_id], c = res.criteria.find(x => x.id === a.criterion_id);
-      if (action === 'change') { c.answer = answer; c.explanation = 'Изменено проверяющим: ' + reason; c.na_reason = null; }
-      const d = normalizeDialog(clone(res), cl());
-      Object.assign(a, { status: 'resolved', decision: { action, answer: action === 'change' ? answer : a.original.answer, reason, decided_at: new Date().toISOString() }, final_total: d.total });
-      return { appeal: normalizeAppeal(clone(a)), dialog: d };
+    async createAppeal({ evaluation_id, criterion_id, comment, proposed_answer }) {
+      const text = proposed_answer !== null && proposed_answer !== undefined
+        ? `${comment}\n\nПредлагаемая оценка: ${proposed_answer}` : comment;
+      return normalizeAppeal(await http('POST', `/api/evaluations/${q(evaluation_id)}/appeals`,
+        { criterion_id, comment: text, author: cfg.AUTHOR }));
+    },
+    reviewAppeal: id => http('POST', `/api/appeals/${q(id)}/review`, { reviewer: cfg.REVIEWER }).then(normalizeAppeal),
+    async decideAppeal(id, { action, answer, reason, dialog_id }) {
+      const res = await http('POST', `/api/appeals/${q(id)}/decision`,
+        { decision: action, new_answer: action === 'change' ? toApi(answer) : null, reason, reviewer: cfg.REVIEWER });
+      const appeal = normalizeAppeal(res.appeal);
+      const dialog = await api.getDialog(dialog_id || appeal.dialog_id, appeal.evaluation_id);
+      appeal.original_total = dialog.total; appeal.final_total = dialog.final_total;
+      return { appeal, dialog, final: res.final };
     }
   };
-
-  return cfg.USE_MOCK ? mock : real;
+  return api;
 })();

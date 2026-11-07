@@ -13,7 +13,8 @@ CQA.pages.analytics = async function (app) {
   if (!results.length) { app.innerHTML = `<div class="wrap"><div class="empty"><h2>Пока нечего анализировать</h2><p>Оцените набор на экране «Диалоги».</p><a class="btn btn-o" href="#dialogs">К диалогам</a></div></div>`; return; }
 
   /* ---------- расчёты ---------- */
-  const totals = results.map(r => r.total).filter(v => v !== null);
+  results = results.filter(r => r.status === 'completed');
+  const totals = results.map(r => r.final_total ?? r.total).filter(v => v !== null && v !== undefined);
   const avg = totals.length ? S.r2(totals.reduce((s, v) => s + v, 0) / totals.length) : 0;
   const grossN = results.filter(r => r.gross).length;
   const decided = appeals.filter(a => a.status === 'resolved');
@@ -33,7 +34,7 @@ CQA.pages.analytics = async function (app) {
 
   const byOp = {};
   results.forEach(r => {
-    const k = r.operator || '—'; (byOp[k] = byOp[k] || { name: k, list: [] }).list.push(r);
+    const k = r.channel === 'voice call' ? 'Звонки' : 'Чаты'; (byOp[k] = byOp[k] || { name: k, list: [] }).list.push(r);
   });
   const ops = Object.values(byOp).map(o => {
     const t = o.list.map(r => r.total).filter(v => v !== null);
@@ -96,9 +97,9 @@ CQA.pages.analytics = async function (app) {
 
     <main class="an-two">
       <section class="panel">
-        <h2>Операторы</h2>
+        <h2>По каналам</h2>
         <div class="optable">
-          <div class="oh"><span>ОПЕРАТОР</span><span>ДИАЛОГОВ</span><span>СРЕДНИЙ БАЛЛ</span><span>НАРУШЕНИЯ</span><span>СЛАБОЕ МЕСТО</span></div>
+          <div class="oh"><span>КАНАЛ</span><span>ДИАЛОГОВ</span><span>СРЕДНИЙ БАЛЛ</span><span>НАРУШЕНИЯ</span><span>СЛАБОЕ МЕСТО</span></div>
           ${ops.map((o, k) => `<div class="orow" style="--k:${k}">
             <span class="opn"><i class="av-s">${esc(o.name[0] || '?')}</i>${esc(o.name)}</span><span>${o.n}</span>
             <span class="sc"><b>${o.avg?.toFixed(2) ?? '—'}</b><span class="mini"><i style="width:0" data-w="${o.avg ?? 0}"></i></span></span>
@@ -120,17 +121,17 @@ CQA.pages.analytics = async function (app) {
           <p class="muted">Загрузите размеченные вручную оценки — покажем, насколько ответы системы совпадают с эталоном по каждому критерию. Так команда проверяет точность модели до контрольного этапа.</p></div>
         <div class="gt-acts">
           <label class="btn btn-o file-btn">Загрузить эталон<input type="file" id="gtFile" accept=".json,.csv"></label>
-          ${CQA.api.demoGroundTruth ? '<button class="btn btn-g" id="gtDemo">Демо-эталон</button>' : ''}
           <button class="btn-l" id="gtFmt">Формат файла</button>
         </div>
       </div>
       <pre class="gt-fmt" id="fmt">JSON:
-[{"conversation_id": "p1-ru-001", "criteria": {"01": "Да", "02": "N/A", "04": 15, "08": "Нет"}}]
+[{"conversation_id": "p1-ru-001", "criteria": {"c01": "yes", "c02": "na", "c04": 15, "c08": "no"}}]
+(подходит eval/gold_tune.json: {"annotations": [{"conversation_id", "answers": {…}}]})
 
 или CSV:
 conversation_id,criterion_id,answer
-p1-ru-001,01,Да
-p1-ru-001,04,15</pre>
+p1-ru-001,c01,yes
+p1-ru-001,c04,15</pre>
       <div id="gtRes"></div>
     </section>
   </div>`;
@@ -160,12 +161,12 @@ p1-ru-001,04,15</pre>
     if (/\.csv$/i.test(name) || /^conversation_id\s*,/i.test(text.trim())) {
       const rows = text.trim().split(/\r?\n/).slice(1).map(l => l.split(',').map(x => x.trim()));
       const map = {};
-      rows.forEach(([d, c, a]) => { if (d && c) (map[d] = map[d] || {})[c.padStart(2, '0')] = a; });
+      rows.forEach(([d, c, a]) => { if (d && c) (map[d] = map[d] || {})[/^\d+$/.test(c) ? 'c' + c.padStart(2, '0') : c] = a; });
       return Object.entries(map).map(([conversation_id, criteria]) => ({ conversation_id, criteria }));
     }
-    let j = JSON.parse(text); if (!Array.isArray(j)) j = j.records || j.data || [];
-    return j.map(r => ({ conversation_id: r.conversation_id || r.id,
-      criteria: Array.isArray(r.criteria) ? Object.fromEntries(r.criteria.map(c => [String(c.id), c.answer])) : (r.criteria || {}) }));
+    let j = JSON.parse(text); if (!Array.isArray(j)) j = j.annotations || j.records || j.data || [];
+    return j.filter(r => r.answers || r.criteria).map(r => ({ conversation_id: r.conversation_id || r.id,
+      criteria: Array.isArray(r.criteria) ? Object.fromEntries(r.criteria.map(c => [String(c.id), c.answer])) : (r.answers || r.criteria || {}) }));
   }
   function compare(gt) {
     const per = Object.fromEntries(checklist.criteria.map(d => [d.id, { d, ok: 0, n: 0 }]));
@@ -212,7 +213,6 @@ p1-ru-001,04,15</pre>
     catch (err) { toast('Не удалось прочитать файл: ' + err.message, true); }
     e.target.value = '';
   });
-  app.querySelector('#gtDemo')?.addEventListener('click', () => renderGT(CQA.api.demoGroundTruth(), 'демо-эталон (тестовые данные)'));
   app.querySelector('#gtFmt').onclick = () => app.querySelector('#fmt').classList.toggle('show');
   if (CQA.state.gt) renderGT(CQA.state.gt.gt, CQA.state.gt.src);
 

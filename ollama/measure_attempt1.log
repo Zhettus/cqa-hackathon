@@ -1,0 +1,7 @@
+=== 2026-11-08 02:43:27 mode=per_dialog model=cqa-qwen14b edge ===
+Модель openai/cqa-qwen14b, голосов 1, промпт v1-05767424a9|dialog, чек-лист v1, диалогов 12, режим per_dialog, нормализация звонков: нет
+  [1/12] edge-ru-001: failed None
+ollama/measure.sh: line 18: 90860 Terminated: 15          .venv/bin/python -m eval.run --db data/cqa_local.db --gold eval/edge_cases.json --mode $MODE --parallel 1
+=== 2026-11-08 02:49:13 mode=per_dialog model=cqa-qwen14b tune15 ===
+Модель openai/cqa-qwen14b, голосов 1, промпт v1-05767424a9|dialog, чек-лист v1, диалогов 15, режим per_dialog, нормализация звонков: нет
+  [1/15] p1-ru-001: failed None

@@ -1,4 +1,5 @@
-/* Экран проверяющего: апелляции (#appeals, #appeals/<id>) */
+/* Экран проверяющего: апелляции (#appeals, #appeals/<id>). Статусы бэкенда: open → in_review → confirmed | changed.
+   Итоги (исходный и финальный) и баллы — с бэкенда. */
 CQA.pages = CQA.pages || {};
 CQA.pages.appeals = async function (app, selId) {
   const { esc, art, tilt, parallax, toast, countUp } = CQA.ui;
@@ -9,16 +10,16 @@ CQA.pages.appeals = async function (app, selId) {
   try { [appeals, checklist] = await Promise.all([CQA.api.getAppeals(), CQA.api.getChecklist()]); }
   catch (e) { app.innerHTML = `<div class="wrap"><div class="empty"><h2>Не удалось загрузить апелляции</h2><p>${esc(e.message)}</p></div></div>`; return; }
   const defs = Object.fromEntries(checklist.criteria.map(c => [c.id, c]));
-  const dialogs = {};
-  let view = 'open', current = selId ? +selId : null, painted = false;
-  if (current && appeals.find(a => a.id == current)?.status === 'resolved') view = 'resolved';
+  const dialogs = {};                                                // evaluation_id → карточка
+  let view = 'open', current = selId || null, painted = false;
+  if (current && appeals.find(a => a.id === current)?.status === 'resolved') view = 'resolved';
 
   app.innerHTML = `
   <section class="hero hero-sm"><div class="wrap">
     <div>
       <div class="crumb">Проверка оценок</div>
       <h1>Апелляции</h1>
-      <p class="lead">Проверяющий видит спорную оценку, комментарий и фрагмент диалога — и подтверждает или меняет её. Итог пересчитывается автоматически.</p>
+      <p class="lead">Проверяющий видит спорную оценку, комментарий и фрагмент диалога — и подтверждает или меняет её. Итог пересчитывается автоматически; исходная оценка сохраняется.</p>
     </div>
     <div class="scene sm">
       <div class="obj" style="left:18%;top:18%;z-index:3" data-d="26"><div class="float">${art.bubble()}</div></div>
@@ -51,72 +52,77 @@ CQA.pages.appeals = async function (app, selId) {
   const matchView = a => view === 'all' || (view === 'open' && a.status === 'open') || (view === 'resolved' && a.status === 'resolved')
     || (view === 'changed' && a.decision?.action === 'change') || (view === 'confirmed' && a.decision?.action === 'confirm');
   const time = iso => iso ? new Date(iso).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+  const statusPill = a => a.status === 'resolved'
+    ? (a.decision.action === 'change' ? '<span class="pill zero">Изменена</span>' : '<span class="pill full">Подтверждена</span>')
+    : a.status_raw === 'in_review' ? '<span class="pill part">В работе</span>' : '<span class="pill na">Открыта</span>';
 
   function renderList() {
     app.querySelectorAll('#seg button').forEach(b => b.classList.toggle('on', b.dataset.v === view));
     app.querySelectorAll('.tile').forEach(t => t.classList.toggle('on', t.dataset.v === view));
-    const list = appeals.filter(matchView).sort((a, b) => b.id - a.id);
+    const list = appeals.filter(matchView).sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
     const box = app.querySelector('#alist');
     if (!appeals.length) { box.innerHTML = `<div class="empty-mini">Пока нет апелляций.<br>Откройте диалог и нажмите «Оспорить» у критерия.<br><a href="#dialogs">К диалогам →</a></div>`; return; }
     if (!list.length) { box.innerHTML = `<div class="empty-mini">Здесь пусто</div>`; app.querySelector('#detail').innerHTML = '<div class="empty-mini">Выберите другой фильтр</div>'; return; }
     box.innerHTML = list.map((a, k) => {
       const c = defs[a.criterion_id] || { title: 'Критерий ' + a.criterion_id };
-      const st = a.status === 'open' ? '<span class="pill part">На рассмотрении</span>'
-        : a.decision.action === 'change' ? '<span class="pill zero">Изменена</span>' : '<span class="pill full">Подтверждена</span>';
-      return `<button class="acard ${painted ? 'still' : ''} ${a.id === current ? 'on' : ''}" data-id="${a.id}" style="--k:${k}">
-        <div class="ac-top"><b>№${a.id} · ${esc(a.dialog_id)}</b>${st}</div>
+      return `<button class="acard ${painted ? 'still' : ''} ${a.id === current ? 'on' : ''}" data-id="${esc(a.id)}" style="--k:${k}">
+        <div class="ac-top"><b>${esc(a.dialog_id)}</b>${statusPill(a)}</div>
         <div class="ac-c">${esc(a.criterion_id)} ${esc(c.title)}</div>
         <div class="ac-q">«${esc(a.comment)}»</div>
-        <div class="ac-t">${time(a.created_at)}</div></button>`;
+        <div class="ac-t">${time(a.created_at)}${a.author ? ' · ' + esc(a.author) : ''}</div></button>`;
     }).join(''); painted = true;
     if (!current && list[0]) select(list[0].id);
   }
 
   async function select(idv) {
-    current = +idv;
-    app.querySelectorAll('.acard').forEach(b => b.classList.toggle('on', +b.dataset.id === current));
-    history.replaceState(null, '', '#appeals/' + current);
+    current = idv;
+    app.querySelectorAll('.acard').forEach(b => b.classList.toggle('on', b.dataset.id === current));
+    history.replaceState(null, '', '#appeals/' + encodeURIComponent(current));
     const a = appeals.find(x => x.id === current), det = app.querySelector('#detail');
     if (!a) { det.innerHTML = '<div class="empty-mini">Выберите обращение слева</div>'; return; }
     det.innerHTML = '<div class="loading">Загружаю диалог…</div>';
-    try { dialogs[a.dialog_id] = await CQA.api.getDialog(a.dialog_id); }
-    catch (e) { det.innerHTML = `<div class="empty-mini">Не удалось загрузить диалог: ${esc(e.message)}</div>`; return; }
+    try {
+      if (!dialogs[a.evaluation_id]) dialogs[a.evaluation_id] = await CQA.api.getDialog(a.dialog_id, a.evaluation_id);
+    } catch (e) { det.innerHTML = `<div class="empty-mini">Не удалось загрузить диалог: ${esc(e.message)}</div>`; return; }
+    const d = dialogs[a.evaluation_id];
+    a.original_total = d.total; a.final_total = d.final_total;
     renderDetail(a);
   }
 
-  function fragment(d, ev) {
-    const t = d.transcript, idx = ev ? t.findIndex(m => m.i === ev) : -1;
+  function fragment(d, n) {
+    const t = d.transcript, idx = n ? t.findIndex(m => m.i === n) : -1;
     const part = idx >= 0 ? t.slice(Math.max(0, idx - 2), idx + 3) : t.slice(0, 6);
     return `<div class="chat frag">${part.map(m => (m.s === 'bot' || m.s === 'system')
       ? `<div class="sys">${esc(m.x)} · ${esc(m.t)}</div>`
-      : `<div class="msg ${m.s === 'operator' ? 'op' : ''} ${m.i === ev ? 'hl' : ''}"><div class="who">${m.s === 'operator' ? 'Оператор' : 'Клиент'} · #${m.i} · ${esc(m.t)}</div><div class="b">${esc(m.x)}</div></div>`).join('')}</div>
+      : `<div class="msg ${m.s === 'operator' ? 'op' : ''} ${m.i === n ? 'hl' : ''}"><div class="who">${m.s === 'operator' ? 'Оператор' : 'Клиент'} · #${m.i} · ${esc(m.t)}</div><div class="b">${esc(m.x)}</div></div>`).join('')}</div>
       ${idx < 0 ? '<div class="hint">В оценке нет ссылки на конкретную реплику — показано начало диалога.</div>' : ''}`;
   }
 
   function renderDetail(a) {
-    const d = dialogs[a.dialog_id], c = d.criteria.find(x => x.id === a.criterion_id) || { ...defs[a.criterion_id], answer: a.original.answer, evidence: [] };
+    const d = dialogs[a.evaluation_id];
+    const c = d.criteria.find(x => x.id === a.criterion_id) || { ...defs[a.criterion_id], answer: a.original.answer, quotes: [], why: '' };
     const orig = { ...c, answer: a.original.answer };
     const det = app.querySelector('#detail');
     const head = `
       <div class="d-head">
-        <div><div class="crumb"><a href="#dialog/${encodeURIComponent(a.dialog_id)}">${esc(a.dialog_id)}</a> · апелляция №${a.id} · ${time(a.created_at)}</div>
+        <div><div class="crumb"><a href="#dialog/${encodeURIComponent(a.dialog_id)}">${esc(a.dialog_id)}</a> · оценка ${esc(a.evaluation_id)} · ${time(a.created_at)}</div>
         <h3>${esc(c.id)} ${esc(c.title)}</h3></div>
-        ${a.status === 'open' ? '<span class="pill part">На рассмотрении</span>' : '<span class="pill full">Решено</span>'}
+        ${statusPill(a)}
       </div>
       <div class="d-two">
-        <div class="box"><small>Исходная оценка</small>
+        <div class="box"><small>Исходная оценка (неизменна)</small>
           <div class="big"><span class="pill ${S.state(orig)}">${esc(S.fmt(c, a.original.answer))}</span>${a.original.points !== null && a.original.points !== undefined ? `<b>${a.original.points} <small>/ ${c.weight}</small></b>` : ''}</div>
-          <p>${esc(a.original.explanation || c.why || '')}</p></div>
-        <div class="box"><small>Комментарий к апелляции</small>
+          <p>${esc(c.why || '')}</p></div>
+        <div class="box"><small>Комментарий к апелляции${a.author ? ' · ' + esc(a.author) : ''}</small>
           <p class="cq">«${esc(a.comment)}»</p>
-          ${a.proposed !== null && a.proposed !== undefined ? `<div class="prop">Предлагает: <span class="pill na">${esc(S.fmt(c, a.proposed))}</span></div>` : ''}</div>
+          ${a.events && a.events.length ? `<div class="ro-note">Журнал: ${a.events.map(e => esc(e.event) + (e.actor ? ' (' + esc(e.actor) + ')' : '') + ' ' + time(e.created_at)).join(' → ')}</div>` : ''}</div>
       </div>
-      <div class="box"><small>Фрагмент диалога</small>${fragment(d, (c.evidence || [])[0])}
+      <div class="box"><small>Фрагмент диалога</small>${fragment(d, (c.quotes && c.quotes[0]) ? c.quotes[0].n : (c.range ? c.range.from_n : null))}
         <a class="lnk" href="#dialog/${encodeURIComponent(a.dialog_id)}">Открыть весь диалог →</a></div>`;
 
     if (a.status === 'resolved') {
       det.innerHTML = head + `
-        <div class="box decided"><small>Решение проверяющего</small>
+        <div class="box decided"><small>Решение проверяющего${a.decision.reviewer ? ' · ' + esc(a.decision.reviewer) : ''}</small>
           <div class="steps3">
             <div><small>Исходная оценка</small><b>${esc(S.fmt(c, a.original.answer))}</b></div>
             <div><small>Решение</small><b>${a.decision.action === 'confirm' ? 'Подтверждена' : 'Изменена на ' + esc(S.fmt(c, a.decision.answer))}</b></div>
@@ -130,50 +136,44 @@ CQA.pages.appeals = async function (app, selId) {
     det.innerHTML = head + `
       <div class="box decide">
         <small>Решение</small>
+        ${a.status_raw === 'open' ? '<div><button class="mini-btn" id="review">Взять в работу</button></div>' : ''}
         <div class="seg big-seg" id="act"><button class="on" data-a="confirm">Подтвердить оценку</button><button data-a="change">Изменить оценку</button></div>
         <div class="chg" id="chg">
           <label class="fl">Новая оценка</label>
-          <div class="opts" id="newOpts">${opts.map(o => `<button data-o="${o}" class="${a.proposed !== null && o == a.proposed ? 'sel' : ''}">${esc(S.fmt(c, o))}</button>`).join('')}</div>
+          <div class="opts" id="newOpts">${opts.map(o => `<button data-o="${o}">${esc(S.fmt(c, o))}</button>`).join('')}</div>
         </div>
         <label class="fl">Причина решения <small>(обязательно)</small></label>
         <textarea id="reason" placeholder="Например: по фрагменту видно, что оператор представился в первом ответе"></textarea>
-        <div class="preview" id="preview"></div>
+        <div class="preview" id="preview">Текущий итог диалога: <b>${(d.final_total ?? d.total)?.toFixed(2) ?? '—'}</b>. После решения итог пересчитает бэкенд.</div>
         <button class="btn btn-g" id="save">Сохранить решение</button>
       </div>`;
 
     let action = 'confirm';
-    const preview = () => {
-      const sel = det.querySelector('#newOpts [data-o].sel')?.dataset.o;
-      const ans = action === 'change' && sel !== undefined ? (c.type === 'scale' && sel !== 'N/A' ? +sel : sel) : c.answer;
-      const next = d.criteria.map(x => x.id === c.id ? { ...x, answer: ans } : x);
-      const before = d.total, after = S.total(next).total;
-      const diff = S.r2((after ?? 0) - (before ?? 0));
-      det.querySelector('#preview').innerHTML = `Итог диалога: <b>${before?.toFixed(2) ?? '—'}</b> → <b>${after?.toFixed(2) ?? '—'}</b>
-        ${diff ? `<span class="pill ${diff < 0 ? 'zero' : 'full'}">${diff > 0 ? '+' : ''}${diff.toFixed(2)}</span>` : '<span class="pill na">без изменений</span>'}`;
-      return ans;
-    };
+    det.querySelector('#review')?.addEventListener('click', async () => {
+      try { Object.assign(a, await CQA.api.reviewAppeal(a.id)); toast('Апелляция взята в работу'); renderList(); renderDetail(a); }
+      catch (e) { toast('Не удалось: ' + e.message, true); }
+    });
     det.querySelector('#act').addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       action = b.dataset.a;
       det.querySelectorAll('#act button').forEach(x => x.classList.toggle('on', x === b));
       det.querySelector('#chg').classList.toggle('show', action === 'change');
       if (action === 'change' && !det.querySelector('#newOpts .sel')) det.querySelector(`#newOpts [data-o]:not([data-o="${c.answer}"])`)?.classList.add('sel');
-      preview();
     });
     det.querySelector('#newOpts').addEventListener('click', e => {
       const o = e.target.closest('[data-o]'); if (!o) return;
-      det.querySelectorAll('#newOpts [data-o]').forEach(x => x.classList.remove('sel')); o.classList.add('sel'); preview();
+      det.querySelectorAll('#newOpts [data-o]').forEach(x => x.classList.remove('sel')); o.classList.add('sel');
     });
-    preview();
     det.querySelector('#save').onclick = async () => {
       const reason = det.querySelector('#reason').value.trim();
       if (!reason) { det.querySelector('#reason').classList.add('err'); det.querySelector('#reason').focus(); toast('Укажите причину решения', true); return; }
-      const ans = preview(), btn = det.querySelector('#save');
-      if (action === 'change' && ans == c.answer) { toast('Выберите оценку, отличную от исходной', true); return; }
-      btn.disabled = true; btn.textContent = 'Сохраняю…';
+      const sel = det.querySelector('#newOpts [data-o].sel')?.dataset.o;
+      const ans = action === 'change' ? (sel === undefined ? null : (c.type === 'scale' && sel !== 'N/A' ? +sel : sel)) : c.answer;
+      if (action === 'change' && (ans === null || ans == c.answer)) { toast('Выберите оценку, отличную от исходной', true); return; }
+      const btn = det.querySelector('#save'); btn.disabled = true; btn.textContent = 'Сохраняю…';
       try {
-        const res = await CQA.api.decideAppeal(a.id, { action, answer: action === 'change' ? ans : c.answer, reason });
-        Object.assign(a, res.appeal); dialogs[a.dialog_id] = res.dialog;
+        const res = await CQA.api.decideAppeal(a.id, { action, answer: ans, reason, dialog_id: a.dialog_id });
+        Object.assign(a, res.appeal); dialogs[a.evaluation_id] = res.dialog;
       } catch (err) { toast('Не удалось сохранить: ' + err.message, true); btn.disabled = false; btn.textContent = 'Сохранить решение'; return; }
       toast(action === 'change' ? `Оценка изменена, итог ${a.original_total?.toFixed(2)} → ${a.final_total?.toFixed(2)}` : 'Оценка подтверждена');
       if (view === 'open') view = 'resolved';

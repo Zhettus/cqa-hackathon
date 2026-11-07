@@ -1,0 +1,1 @@
+playwright>=1.47   # scripts/e2e_smoke.py; после установки: python -m playwright install chromium

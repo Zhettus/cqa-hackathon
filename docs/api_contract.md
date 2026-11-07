@@ -6,8 +6,10 @@
 `prompt_version`, `votes`, `effort`. Тесты эндпоинтов — `tests/test_api.py`.
 
 Контракт для параллельной работы backend и frontend. Всё под префиксом `/api`,
-JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся тем же FastAPI (`/ui/`),
-поэтому CORS не нужен; для Dynamics 365 страница получает параметры через URL.
+JSON в UTF-8, время — ISO 8601 UTC. Фронтенд (`frontend/`) раздаётся тем же FastAPI
+на корне `/` (`/ui/…` перенаправляется на `/…`); для встраивания с другого источника —
+`CORS_ORIGINS` в `.env` (список через запятую). Для Dynamics 365 страница получает
+параметры через URL: `/?conversation=<id>&view=dialog|dialogs|checklist|appeals|analytics&group=<group_id>&n=<номер реплики>`.
 
 ## 0. Общие соглашения
 
@@ -34,8 +36,8 @@ JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся 
 | 502 | сбой источника данных или LLM-провайдера после всех повторов |
 
 **Ссылка в UI** (в т.ч. как web resource D365):
-`/ui/?conversation_id=p1-ru-001&evaluation_id=ev_…&n=12` — открыть карточку,
-прокрутить к реплике 12, для звонка — перемотать плеер.
+`/?view=dialog&conversation=p1-ru-001&n=12` — открыть карточку, прокрутить к реплике 12,
+для звонка — перемотать плеер (внутри приложения тот же экран — `#dialog/p1-ru-001`).
 
 ---
 
@@ -81,9 +83,10 @@ JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся 
     "conversation_id": "p1-ru-003", "group_id": "DEV",
     "channel": "agent chat", "language": "RU",
     "messages": 14, "operator_messages": 3, "has_audio": false,
-    "latest_evaluation": { "id": "ev_01J…", "status": "completed",
+    "latest_evaluation": { "id": "ev_01J…", "status": "completed",     // completed | not_evaluable | failed
       "checklist": {"id": "chat-quality", "version": 1},
       "total": 76.88, "final_total": 76.88, "open_appeals": 0,
+      "flags": ["c08"],          // критерии-флаги с ответом "yes" (для списка без запроса каждой оценки)
       "created_at": "…" }        // null, если не оценивался
   } ], "total": 65 }
 ```

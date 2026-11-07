@@ -13,7 +13,23 @@
 python -m venv .venv && .venv/bin/pip install -r requirements.txt
 cp .env.example .env            # LLM_API_KEY=… (Anthropic) или LLM_PROVIDER=openai + LLM_BASE_URL (Ollama/vLLM)
 .venv/bin/python -m pytest -q   # 232 passed
-.venv/bin/uvicorn backend.main:app --reload     # http://localhost:8000 → /ui/ (фронтенд), /docs (OpenAPI)
+.venv/bin/uvicorn backend.main:app --reload     # http://localhost:8000 — фронтенд; /docs — OpenAPI; /api/meta — конфигурация
+```
+
+Фронтенд (`frontend/`, чистый HTML/CSS/JS, без сборки и CDN) раздаётся тем же сервером на корне. Экраны: диалоги
+(загрузка набора по `group_id`, пакетная оценка с прогрессом), карточка диалога (транскрипт с флагами реплик, для
+звонков — очищенный текст и перемотка плеера; по каждому критерию ответ, баллы, вес, обоснование, цитата или
+проверенный участок, причина N/A, сработавшие правила; итог и секции; подача апелляции), чек-лист (версии,
+редактирование, справочник `reference`, проверка на сервере, сохранение новой версии, переоценка набора ею),
+апелляции (очередь, «в работу», решение с причиной, исходный и финальный итог), аналитика (по критериям, каналам,
+языкам, сверка с эталоном из файла). Все данные — из API; заготовленных результатов во фронтенде нет.
+Встраивание (Dynamics 365): `/?view=dialog&conversation=<id>&n=<реплика>`; с другого источника — `CORS_ORIGINS` в `.env`.
+
+Сквозная проверка фронтенда на живом сервере (Playwright, без вызовов модели):
+```
+pip install -r requirements-dev.txt && python -m playwright install chromium
+cp data/cqa.db data/cqa_e2e.db && DB_PATH=data/cqa_e2e.db .venv/bin/uvicorn backend.main:app --port 8010 &
+.venv/bin/python scripts/e2e_smoke.py --base http://localhost:8010      # 39 проверок, консоль браузера без ошибок
 ```
 
 Загрузка набора организаторов по `group_id` (при недоступности API — `data/{group_id}.json`):
@@ -39,6 +55,21 @@ curl 'localhost:8000/api/results?group_id=DEV&format=csv'
 
 Чек-лист — данные (`backend/checklists/default_v1.json`, версии в БД). Новый критерий любого типа
 (да/нет, шкала, флаг) с N/A, guards и подсказками работает без правки кода.
+
+## Модели: облачная, бесплатная, локальная — точность и стоимость
+
+Провайдер выбирается только настройками `.env` (`LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`),
+код оценки один и тот же. Режим `EVAL_MODE=per_dialog` (один вызов на весь диалог) экономит запросы для
+бесплатных тарифов; `RATE_LIMIT_RPM` ограничивает частоту запросов; ошибки биллинга/аутентификации
+останавливают пакет с понятным сообщением, лимит запросов (429) — ожидание и повтор.
+
+| Вариант | Настройка | Точность (эталон) | Время на диалог | Стоимость |
+|---|---|---|---|---|
+| Облачная платная: Anthropic claude-opus-5-5, per_criterion, VOTES=3 | `LLM_PROVIDER=anthropic` | tune 425/440 = 96.6 %, edge 87/88 | ≈ 12 с при 4 параллельных (≈ 35 с на диалог при 3 голосах) | ≈ $0.10 за голос на диалог |
+| Бесплатная облачная: Gemini / Groq / OpenRouter (OpenAI-совместимый адрес) | `LLM_PROVIDER=openai`, адрес и ключ — см. `.env.example`, `RATE_LIMIT_RPM` под тариф | **не измерено — нет ключа** (в проекте нет аккаунта ни одного из сервисов) | — | $0 в пределах лимитов |
+| Локальная: Ollama, qwen2.5:14b (контекст 16k), M1 Pro 32 ГБ | `ollama/README.md`; `EVAL_MODE=per_dialog`, `LLM_CONCURRENCY=1` | __LOCAL_ACC__ | __LOCAL_TIME__ | $0 |
+
+__LOCAL_NOTE__
 
 ## Точность на эталоне
 

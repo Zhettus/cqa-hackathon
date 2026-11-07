@@ -16,6 +16,7 @@ from typing import Any, Iterator, Literal
 
 from fastapi import APIRouter, Body, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -147,13 +148,20 @@ def create_app(db_path: str | Path | None = None, data_dir: str | Path | None = 
         return _error(e.status_code, "http_error", str(e.detail))
 
     app.include_router(router)
+
+    # CORS: список источников через запятую в CORS_ORIGINS (.env); пусто — только тот же источник
+    origins = [o.strip() for o in (os.getenv("CORS_ORIGINS") or "").split(",") if o.strip()]
+    if origins:
+        app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"])
+
+    @app.get("/ui", include_in_schema=False)
+    @app.get("/ui/{rest:path}", include_in_schema=False)
+    async def legacy_ui(rest: str = ""):
+        return RedirectResponse("/" + rest, status_code=307)
+
+    # Фронтенд — статика на корне (после маршрутов /api/*): index.html, js/, css/; параметры — через URL
     FRONTEND_DIR.mkdir(exist_ok=True)
-    app.mount("/ui", StaticFiles(directory=FRONTEND_DIR, html=True), name="ui")
-
-    @app.get("/", include_in_schema=False)
-    async def root():
-        return RedirectResponse("/ui/")
-
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
     return app
 
 

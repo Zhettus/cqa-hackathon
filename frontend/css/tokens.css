@@ -4,7 +4,7 @@
   --blue:#7B8CF5; --green:#1FD17A; --green-d:#16A35A; --amber:#E89B12; --red:#E5484D;
   --grad:linear-gradient(90deg,var(--blue),var(--green));
   --ease:cubic-bezier(.2,.8,.2,1);
-  --head:Manrope,Inter,system-ui,sans-serif;
-  --body:Inter,system-ui,sans-serif;
+  --head:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --body:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
   --r-lg:24px; --r-md:16px; --r-sm:12px;
 }

@@ -70,16 +70,33 @@ time (until curl -s localhost:8000/api/batches/$BID | grep -q '"status": *"compl
 
 - Таблица: `curl 'localhost:8000/api/results?group_id=<GROUP_ID>'`; CSV для сдачи:
   `curl 'localhost:8000/api/results?group_id=<GROUP_ID>&format=csv' -o results.csv`.
-- Карточка диалога: `/ui/?conversation_id=<id>&evaluation_id=<ev_id>` (обоснования, цитаты по `n`,
-  для звонков — `text_clean` и плеер по `audio_offset_s`).
+- Карточка диалога: `http://localhost:8000/?view=dialog&conversation=<id>` (обоснования, цитаты по `n`,
+  для звонков — очищенный текст и плеер по `audio_offset_s`); список — `/#dialogs`, результаты — `/#analytics`.
 - Логи и стоимость: `curl 'localhost:8000/api/llm-calls/summary?batch_id=bt_…'`.
+
+## 3а. Если облачная модель недоступна (баланс, ключ, лимиты)
+
+Сообщение пакета вида «У провайдера закончился баланс/квота (биллинг)…» или «Провайдер отклонил ключ…» —
+пакет остановлен, оценённые диалоги сохранены. Переключение (только `.env`, перезапуск сервера):
+
+1. Бесплатная облачная (если есть ключ): `LLM_PROVIDER=openai`, `LLM_BASE_URL`/`LLM_MODEL`/`LLM_API_KEY`
+   из `.env.example` (Gemini, Groq или OpenRouter), `RATE_LIMIT_RPM` под тариф, `EVAL_MODE=per_dialog`,
+   `VOTES=1`. Точность не измерена (ключа не было).
+2. Локальная Ollama (`ollama/README.md`): `LLM_PROVIDER=openai  LLM_BASE_URL=http://localhost:11434/v1
+   LLM_MODEL=cqa-qwen14b  LLM_API_KEY=ollama  LLM_CONCURRENCY=1  LLM_TIMEOUT_S=900  EVAL_MODE=per_dialog  VOTES=1`;
+   пакет с `concurrency: 1`. __LOCAL_RUNBOOK__
+3. Затем новый пакет: `POST /api/batches {"group_id":"<GROUP_ID>","only_not_evaluated":true,"concurrency":1}` —
+   оценит только то, что не успела облачная модель (версия чек-листа та же).
+
+При 429 (лимит запросов) ничего делать не нужно: пакет ждёт `RATE_LIMIT_BACKOFF_S × 2^n` и повторяет сам
+(статус элемента остаётся `running`, причина ожидания — в `items[].error`).
 
 ## 4. Если что-то пошло не так
 
 | Симптом | Действие |
 |---|---|
 | `502 data_source_error` при импорте | проверить `DATA_API_URL`/сеть; сохранить JSON организаторов в `data/<group_id>.json` и импортировать с `prefer: local` |
-| пакет `failed` с ошибкой аутентификации | проверить `LLM_API_KEY`, перезапустить сервер, создать пакет заново (`only_not_evaluated: true`) |
+| пакет `failed` с ошибкой аутентификации или биллинга | диалоги со статусом `provider_error` не оценены (записей оценки нет); проверить `LLM_API_KEY`/баланс или переключить провайдера (§3а), перезапустить сервер, новый пакет с `only_not_evaluated: true` |
 | отдельные `failed` в пакете | `POST /api/evaluations` по диалогу; причина — в `items[].error` и `GET /api/llm-calls?conversation_id=…` |
 | `not_evaluable` | в диалоге нет засчитываемых реплик оператора (R1/R11) — итог `null`, это ожидаемое поведение |
 | нужно поменять критерий | `POST /api/checklists/chat-quality/versions` (новая версия) → новый пакет с `checklist_version` |

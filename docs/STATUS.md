@@ -6,7 +6,7 @@
 
 ## 0. Кратко
 
-- Готово: этапы 0–3, REST API (4) без фронтенда, нормализация звонков (5), апелляции с пересчётом
+- Готово: этапы 0–3, REST API (4) и подключённый к нему фронтенд второго участника (4б), нормализация звонков (5), апелляции с пересчётом
   final (6), репетиция замены критерия и пакета (7). Тесты: `237 passed, 1 skipped`.
 - **Итоговая точность, `--votes 3`** (claude-opus-5-5, effort high, чек-лист v1, промпт `v1-2136ba546a`):
   tune **425/440 = 96.6 %**, MAE итога 2.17, точных итогов 43/55, единогласно 433/440;
@@ -48,7 +48,8 @@ python scripts/rehearsal.py --base http://localhost:8000 --group DEV --limit 10 
 | 1 | data_source (API + fallback), БД (наборы, диалоги, версии чек-листов, оценки, результаты, логи LLM, апелляции, решения, журнал, пакеты, нормализации; триггеры неизменяемости), preprocess, scoring (Decimal ROUND_HALF_UP) | `backend/data_source.py`, `backend/db.py`, `backend/preprocess.py`, `backend/scoring.py` |
 | 2 | провайдеры Anthropic / OpenAI-совместимый; промпт из конфига критерия + `docs/rules.md` (+ `reference`); один вызов на критерий; валидатор (N/A, ступени, idx, цитата — подстрока оригинала, повтор); guards/hints из конфига с валидацией при сохранении; VOTES + confidence; логи и стоимость; умолчания settings; любой сбой → `failed` | `backend/llm/`, `backend/prompt.py`, `backend/evaluator.py`, `backend/validator.py`, `backend/guards.py`, `backend/hints.py`, `backend/checklist.py` |
 | 3 | eval: точность, ступени, MAE, разбивки, расхождения с reasoning/guards, edge, uncertain, `accept`, кэш, `--ids/--channel/--normalize/--version/--db/--no-cache`; дельта отчётов | `eval/run.py`, `eval/compare.py` |
-| 4 | REST API по контракту (наборы, диалоги с сегментами/фактами/аудио Range, чек-листы с версиями/diff/validate, оценка, пакеты с прогрессом и отменой, результаты JSON/CSV, апелляции, логи, health/meta), `/ui/` → `frontend/` (заглушка, фронтенд делает второй человек); проверено на живом сервере | `backend/main.py`, `backend/batches.py`, `tests/test_api.py` |
+| 4 | REST API по контракту (наборы, диалоги с сегментами/фактами/аудио Range, чек-листы с версиями/diff/validate, оценка, пакеты с прогрессом и отменой, результаты JSON/CSV, апелляции, логи, health/meta); фронтенд на корне `/`, `CORS_ORIGINS`; проверено на живом сервере | `backend/main.py`, `backend/batches.py`, `tests/test_api.py` |
+| 4б | **Фронтенд второго участника подключён к нашему API**: импорт как есть (коммит `d153b5d`), затем интеграция — единый `js/api.js` под `docs/api_contract.md` (относительные пути, адрес API в одном месте), моки и демо-данные удалены, CDN-шрифты заменены системными, параметры через URL, iframe; экраны адаптированы (статусы not_evaluable/failed, флаги реплик и очищенный текст звонков, перемотка плеера по `audio_offset_s`, цитаты/checked_range/N/A/guards, версии чек-листа и `reference`, апелляции open → in_review → решение, исходный и финальный итог). Проверка: `scripts/e2e_smoke.py` — 39 сценариев на живом сервере, консоль без ошибок | `frontend/`, `scripts/e2e_smoke.py` |
 | 5 | нормализация звонков моделью-корректором: `text_clean`, `asr_uncertain`, валидация, кэш, лог; оригинал не меняется; в карточке — всегда, в оценке — по `NORMALIZE_CALLS` | `backend/normalize.py`, `tests/test_normalize.py` |
 | 6 | апелляции: open → in_review → confirmed \| changed, журнал (append-only), причина при изменении, `final` через `scoring.score` (последнее решение по критерию побеждает), `final_total`/`final_answers` в списках и результатах, исходная оценка неизменна | `backend/appeals.py`, `tests/test_appeals.py` |
 | 7 | репетиция: новая версия чек-листа через API (замена c06, конфликт base_version, diff), пакет с новой версией, сравнение итогов v1/v2, CSV | `scripts/rehearsal.py`, §6 |
@@ -130,6 +131,33 @@ c03 ×1 (p1-ru-010 yes→na). Edge: edge-ru-007/c04 = 20 (эталон 10, accep
 `python -m eval.run --db data/cqa_exp.db --gold eval/gold_tune.json --votes 3 --version 2 --ids p1-en-014 p4-ru-005`
 (≈ $0.7, 1 мин) и, если tune по-прежнему не хуже, активировать v2 (см. `backend/checklists/candidates/README.md`)
 и перенести это в §5.
+
+## 4а. Бесплатные провайдеры: ошибки провайдера, лимиты, режим per_dialog, замеры
+
+Баланс Anthropic API исчерпан 2026-11-08 02:17 и пополнению не подлежит. Сделано (коммиты `172f0b2`, `f8e3ff2`):
+
+- **Ошибки провайдера не делают диалог `failed`.** Коды `auth` / `billing` / `rate_limit` (`PROVIDER_ERROR_CODES`):
+  оценка не сохраняется, исключение уходит вызывающему. Пакет: при `auth`/`billing` останавливается с понятным
+  сообщением (элементы, которые не успели оцениться, — статус `provider_error`, оценённые сохранены); при 429 ждёт
+  `RATE_LIMIT_BACKOFF_S × 2^n` и повторяет диалог до `RATE_LIMIT_ATTEMPTS` раз. `eval.run` — так же.
+  Anthropic: «credit balance»/402 → `billing`, 429/529 → `rate_limit`; OpenAI-совместимые: 402 и 400 с quota/credit →
+  `billing`, 429 → `rate_limit`, 401/403 → `auth`. Тесты: `tests/test_provider_errors.py`.
+- **`RATE_LIMIT_RPM`** — равномерное ограничение стартов запросов поверх семафора (для бесплатных тарифов).
+- **`EVAL_MODE=per_dialog`** — один вызов на весь диалог: схема `{criterion_id: ответ по критерию}` собирается из
+  конфига чек-листа, тот же валидатор (повтор только по невалидным критериям с подсказкой, до 2 раз), те же guards и
+  голосование; `eval_mode` хранится в оценке, версия промпта получает суффикс `|dialog` (отдельный ключ кэша).
+  Тесты: `tests/test_per_dialog.py`. На подставном провайдере даёт тот же итог, что per_criterion.
+- **Провайдеры через `.env`** (код оценки не меняется): Ollama локально; Gemini / Groq / OpenRouter через
+  OpenAI-совместимый адрес — примеры в `.env.example`. **Ключа ни одного бесплатного облачного сервиса в проекте
+  нет**, поэтому облачный бесплатный вариант не измерен — нужен ключ от владельца.
+- **Локально**: установлена Ollama (Homebrew), модель `qwen2.5:14b` (9 ГБ) + вариант `cqa-qwen14b` с контекстом
+  16k и temperature 0 (`ollama/Modelfile.qwen14b`); замер — `ollama/measure.sh` на отдельной БД
+  `data/cqa_local.db` (оценки Opus в `data/cqa.db` не тронуты).
+
+Замер локальной модели (edge целиком + 15 диалогов tune: 7 RU, 3 KZ, 3 EN, 2 звонка; VOTES=1; сравнение с
+Opus по тем же диалогам из отчётов `20261107_234106` / `233008`, votes 3):
+
+__LOCAL_TABLE__
 
 ## 5. Зафиксированная конфигурация контрольного прогона
 
