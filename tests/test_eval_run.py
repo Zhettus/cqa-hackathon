@@ -86,3 +86,29 @@ def test_migration_adds_columns(tmp_path):
     db.init_db(c)
     cols = {r[1] for r in c.execute("PRAGMA table_info(evaluations)")}
     assert {"prompt_version", "votes"} <= cols
+
+
+def test_failed_evaluation_counts_as_mismatch_everywhere():
+    """B1: нет оценки при наличии эталона → ошибка по всем критериям, диалог в знаменателе точности и MAE."""
+    gold = {"conversation_id": "x", "answers": {"c01": "yes", "c02": "na", "c03": "na", "c04": 20, "c05": "yes",
+                                               "c06": 10, "c07": "yes", "c08": "no"}, "total": 100.0, "notes": ""}
+    rec = {"conversation_id": "x", "language": "RU", "channel": "agent chat", "transcript": []}
+    ok = compare({"conversation_id": "ok", "status": "completed", "total": 100.0, "criteria": [
+        {"criterion_id": cid, "answer": a, "explanation": "", "evidence": {}} for cid, a in gold["answers"].items()]},
+        gold, CL, rec)
+    for status in ("failed", "not_evaluable"):
+        bad = compare({"conversation_id": "x", "status": status, "status_reason": "HTTP 503", "total": None,
+                       "criteria": []}, gold, CL, rec)
+        assert bad["status_mismatch"] and len(bad["criteria"]) == 8
+        assert all(not r["match"] and r["system"] == status and r["status_mismatch"] for r in bad["criteria"])
+        mt = metrics([ok, bad], CL)
+        assert mt["n"] == 16 and mt["match"] == 8 and mt["status_mismatch"] == ["x"]
+        assert mt["total_compared"] == 2 and mt["total_exact"] == 1 and mt["total_mae"] == 50.0   # |100 − 0| / 2
+        assert mt["criteria"]["c04"]["step_err"] == [0] and mt["criteria"]["c04"]["na_mismatch"] == 0   # [0] — от ok
+        md = render({"started": "t", "gold": ["g"], "prompt_version": "v", "model": "m", "votes": 1, "usd": 0,
+                     "seconds": 1}, [ok, bad], mt, [], CL)
+        assert "Нет оценки при наличии эталона: 1" in md and f"x — {status} (HTTP 503)" in md
+    # эталон не ждёт ответов (not_evaluable) — строк нет, диалог не в знаменателе
+    ne = compare({"conversation_id": "y", "status": "not_evaluable", "total": None, "criteria": []},
+                 {"conversation_id": "y", "answers": None, "total": None, "expected_behavior": "not_evaluable"}, CL, rec)
+    assert not ne["status_mismatch"] and ne["criteria"] == [] and metrics([ne], CL)["n"] == 0

@@ -68,7 +68,20 @@ def compare(ev: dict, gold: dict, checklist: dict, record: dict) -> dict:
            "cached": ev.get("cached", False), "cost": ev.get("cost") or {}, "status_reason": ev.get("status_reason")}
     expected_status = gold.get("expected_behavior") or ("not_evaluable" if gold.get("answers") is None else "completed")
     res["expected_status"] = expected_status
-    if ev["status"] != "completed" or not gold.get("answers"):
+    res["status_mismatch"] = False
+    if not gold.get("answers"):
+        return res
+    if ev["status"] != "completed":
+        # Эталон ждёт ответы, а оценки нет (failed / not_evaluable): ошибка по всем критериям,
+        # диалог остаётся в знаменателе точности и MAE (итог считается как 0).
+        res["status_mismatch"] = True
+        for cid, g in gold["answers"].items():
+            if cid in crits:
+                res["criteria"].append({"criterion_id": cid, "type": crits[cid]["type"], "gold": g,
+                                        "system": ev["status"], "match": False, "status_mismatch": True,
+                                        "explanation": ev.get("status_reason") or "", "guards": [], "evidence": {},
+                                        "confidence": None, "uncertain": cid in res["uncertain"],
+                                        "step_error": None, "cause": f"статус {ev['status']}"})
         return res
     pre = preprocess(record, checklist.get("settings") or {})
     msgs = {m.idx: m for m in pre.messages}
@@ -117,17 +130,25 @@ def metrics(results: list[dict], checklist: dict) -> dict:
     per = defaultdict(lambda: {"n": 0, "match": 0, "step_err": [], "na_mismatch": 0})
     groups = defaultdict(lambda: {"n": 0, "match": 0, "abs_err": [], "dialogs": 0})
     abs_err = []
+    status_mismatch = []
     for r in results:
+        if r.get("status_mismatch"):
+            status_mismatch.append(r["conversation_id"])
         for row in r["criteria"]:
             p = per[row["criterion_id"]]
             p["n"] += 1
             p["match"] += row["match"]
-            if row["type"] == "scale":
+            if row["type"] == "scale" and not row.get("status_mismatch"):
                 if row["step_error"] is None and not row["match"]:
                     p["na_mismatch"] += 1
                 elif row["step_error"] is not None:
                     p["step_err"].append(row["step_error"])
-        err = abs(r["total"] - r["gold_total"]) if r["total"] is not None and r["gold_total"] is not None else None
+        if r["gold_total"] is None:
+            err = None
+        elif r["total"] is not None:
+            err = abs(r["total"] - r["gold_total"])
+        else:
+            err = abs(r["gold_total"]) if r.get("status_mismatch") else None   # итог не получен → как 0
         if err is not None:
             abs_err.append(err)
         for key in (f"язык {r['language']}", f"канал {r['channel']}"):
@@ -141,7 +162,8 @@ def metrics(results: list[dict], checklist: dict) -> dict:
     m = sum(p["match"] for p in per.values())
     return {"criteria": dict(per), "groups": dict(groups), "n": n, "match": m,
             "total_mae": sum(abs_err) / len(abs_err) if abs_err else None,
-            "total_exact": sum(e < 0.005 for e in abs_err), "total_compared": len(abs_err)}
+            "total_exact": sum(e < 0.005 for e in abs_err), "total_compared": len(abs_err),
+            "status_mismatch": status_mismatch}
 
 
 # --- отчёт -------------------------------------------------------------------------------------
@@ -161,11 +183,14 @@ def render(meta: dict, results: list[dict], mt: dict, edge: list[dict], checklis
          f"- Модель: {meta['model']}; голосов: {meta['votes']}",
          f"- Диалогов: {len(results)}; из кэша: {sum(r['cached'] for r in results)}; "
          f"стоимость новых вызовов: ${meta['usd']:.4f}; время: {meta['seconds']:.0f} с", ""]
-    failed = [r for r in results if r["status"] == "failed"]
-    if failed:
-        L += ["**Не оценены:** " + "; ".join(f"{r['conversation_id']} ({r['status_reason']})" for r in failed), ""]
+    bad = [r for r in results if r.get("status_mismatch")]
+    if bad:
+        L += [f"**Нет оценки при наличии эталона: {len(bad)}** (ошибка по всем критериям, итог считается как 0): " +
+              "; ".join(f"{r['conversation_id']} — {r['status']}" + (f" ({r['status_reason']})" if r.get("status_reason") else "")
+                        for r in bad), ""]
     L += ["## Итог", "",
           f"- Совпадение по критериям: **{mt['match']}/{mt['n']} = {pct(mt['match'], mt['n'])}**",
+          f"- Диалогов без оценки при наличии эталона: {len(mt['status_mismatch'])}",
           f"- Итог: точное совпадение {mt['total_exact']}/{mt['total_compared']}, "
           f"средняя абсолютная ошибка **{mt['total_mae']:.2f}**" if mt["total_mae"] is not None else "- Итог: —", "",
           "## По критериям", "", "| Критерий | Тип | Совпадение | Ошибка в ступенях (среднее) | N/A ↔ значение |",
@@ -269,6 +294,8 @@ async def main_async(args) -> int:
     stem.with_suffix(".json").write_text(json.dumps({"meta": meta, "results": results, "edge": edge}, ensure_ascii=False,
                                                     indent=1, default=str), encoding="utf-8")
     print(f"\nСовпадение по критериям: {mt['match']}/{mt['n']} = {pct(mt['match'], mt['n'])}")
+    if mt["status_mismatch"]:
+        print(f"Без оценки при наличии эталона: {len(mt['status_mismatch'])} ({', '.join(mt['status_mismatch'])})")
     if mt["total_mae"] is not None:
         print(f"MAE итога: {mt['total_mae']:.2f}; точных итогов {mt['total_exact']}/{mt['total_compared']}")
     if edge:
