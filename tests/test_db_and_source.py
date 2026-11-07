@@ -21,8 +21,11 @@ def test_default_checklist_matches_spec(checklist_v1):
     import re
     spec = (ROOT / "docs" / "SPEC.md").read_text(encoding="utf-8")
     spec_cl = json.loads(re.search(r"## Исходный чек-лист\s*```json\n(.*?)```", spec, re.S).group(1))
-    for k in ("name", "version", "sections", "criteria"):
+    for k in ("name", "version", "sections"):
         assert checklist_v1[k] == spec_cl[k]
+    # guards и hints — наши настраиваемые расширения; остальное дословно из SPEC
+    ours = [{k: v for k, v in c.items() if k not in ("guards", "hints")} for c in checklist_v1["criteria"]]
+    assert ours == spec_cl["criteria"]
     assert checklist_v1["settings"]["first_response_threshold_s"] == 180
     assert validate_checklist(checklist_v1) == []
 

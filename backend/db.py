@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS criterion_results (
     points        REAL,
     explanation   TEXT,
     evidence_json TEXT NOT NULL DEFAULT '{}',
+    meta_json     TEXT NOT NULL DEFAULT '{}',   -- confidence, голоса, guards, подсказки, violation_type
     PRIMARY KEY (evaluation_id, criterion_id)
 );
 
@@ -311,9 +312,10 @@ def insert_evaluation(conn: sqlite3.Connection, ev: dict, criteria: list[dict]) 
         for c in criteria:
             conn.execute(
                 "INSERT INTO criterion_results(evaluation_id, criterion_id, section, type, weight, answer_json, "
-                "applicable, points, explanation, evidence_json) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                "applicable, points, explanation, evidence_json, meta_json) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                 (eid, c["criterion_id"], c["section"], c["type"], c["weight"], _j(c["answer"]),
-                 int(bool(c["applicable"])), c.get("points"), c.get("explanation"), _j(c.get("evidence", {}))),
+                 int(bool(c["applicable"])), c.get("points"), c.get("explanation"), _j(c.get("evidence", {})),
+                 _j(c.get("meta", {}))),
             )
     return eid
 
@@ -332,10 +334,24 @@ def get_evaluation(conn: sqlite3.Connection, evaluation_id: str) -> dict:
     d["criteria"] = [{"criterion_id": c["criterion_id"], "section": c["section"], "type": c["type"],
                       "weight": c["weight"], "answer": json.loads(c["answer_json"]),
                       "applicable": bool(c["applicable"]), "points": c["points"],
-                      "explanation": c["explanation"], "evidence": json.loads(c["evidence_json"])} for c in crit]
+                      "explanation": c["explanation"], "evidence": json.loads(c["evidence_json"]),
+                      **_meta(json.loads(c["meta_json"]))} for c in crit]
     d["llm_call_ids"] = [r[0] for r in conn.execute(
         "SELECT id FROM llm_calls WHERE evaluation_id = ? ORDER BY started_at", (evaluation_id,))]
+    d["cost"] = evaluation_cost(conn, evaluation_id)
     return d
+
+
+def _meta(m: dict) -> dict:
+    return {"confidence": m.get("confidence"), "votes": m.get("votes", []), "model_answer": m.get("model_answer"),
+            "guards": m.get("guards", []), "hints": m.get("hints", []), "violation_type": m.get("violation_type")}
+
+
+def evaluation_cost(conn: sqlite3.Connection, evaluation_id: str) -> dict:
+    r = conn.execute("SELECT COUNT(*), COALESCE(SUM(tokens_in),0), COALESCE(SUM(tokens_out),0), "
+                     "COALESCE(SUM(cost_usd),0), COALESCE(SUM(status != 'ok'),0) FROM llm_calls "
+                     "WHERE evaluation_id = ?", (evaluation_id,)).fetchone()
+    return {"calls": r[0], "tokens_in": r[1], "tokens_out": r[2], "usd": round(r[3], 6), "rejected_calls": r[4]}
 
 
 # --- логи LLM ---------------------------------------------------------------------------

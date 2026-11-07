@@ -181,6 +181,8 @@ JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся 
   "created_at": "…", "duration_ms": 8400,
   "model": { "provider": "anthropic", "name": "…" },
   "llm_call_ids": ["llm_01J…"],   // пусто для not_evaluable
+  "cost": { "calls": 8, "tokens_in": 52000, "tokens_out": 3100, "usd": 0.27,
+            "rejected_calls": 1 },    // сумма по llm_calls этой оценки; rejected — отклонённые валидатором
   "facts": {                      // посчитано backend/preprocess.py (инвариант 3), поля Facts
     "channel": "agent chat",
     "client_language": "RU", "operator_first_reply_language": "RU",
@@ -300,6 +302,8 @@ JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся 
   "created_at": "…", "duration_ms": 8400,
   "model": { "provider": "anthropic", "name": "…" },
   "llm_call_ids": ["llm_01J…"],   // пусто для not_evaluable
+  "cost": { "calls": 8, "tokens_in": 52000, "tokens_out": 3100, "usd": 0.27,
+            "rejected_calls": 1 },    // сумма по llm_calls этой оценки; rejected — отклонённые валидатором
   "facts": {                      // посчитано кодом (инвариант 3)
     "first_response_s": 75, "first_response_threshold_s": 180,
     "first_response_exceeded": false,
@@ -321,7 +325,14 @@ JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся 
       "quotes": [ { "n": 7, "text": "…" } ], // для quote; цитата — точная подстрока text реплики n
       "range": null,                         // для checked_range: { "from_n": 4, "to_n": 14 }
       "na_condition": null                   // для na_condition: текст выполненного условия
-    }
+    },
+    "confidence": 1.0,                       // доля голосов, совпавших с итогом (VOTES)
+    "votes": [10],                           // ответы модели по голосам
+    "model_answer": 10,                      // ответ модели до guards
+    "guards": [ { "id": "c06_timing", "conditions": ["first_response_s = 311 > 180"],
+                  "before": 10, "after": 7 } ],   // сработавшие жёсткие правила (также в explanation)
+    "hints": [ { "idx": 10, "name": "transfer_to_me", "label": "…", "match": "Скиньте деньги мне" } ],
+    "violation_type": null                   // для flag: none|insult|off_platform_paid_service|confidential_disclosure|other
   } ]
 }
 ```
