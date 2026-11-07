@@ -1,0 +1,77 @@
+{
+  "checklist_version": 1,
+  "split": "edge",
+  "purpose": "Проверка устойчивости на случаях, которых нет в DEV. Не использовать для подгонки промптов.",
+  "annotations": [
+    {"conversation_id": "edge-ru-001", "target": ["c06"],
+     "answers": {"c01":"yes","c02":"na","c03":"na","c04":20,"c05":"yes","c06":7,"c07":"yes","c08":"no"},
+     "total": 93.08,
+     "facts": {"first_response_s": 311, "max_unwarned_gap_s": 311},
+     "notes": "Первая реакция 5:11 после эскалации (00:41 → 05:52), порог 3 мин превышен. «Спасибо за ожидание» после паузы — не предупреждение."},
+
+    {"conversation_id": "edge-ru-002", "target": ["c06"],
+     "answers": {"c01":"yes","c02":"yes","c03":"na","c04":20,"c05":"yes","c06":4,"c07":"yes","c08":"no"},
+     "total": 88.75,
+     "facts": {"first_response_s": 47, "max_unwarned_gap_s": 634},
+     "notes": "Пауза 01:41 → 12:15 без предупреждения, клиент спросил «Вы здесь?» (07:30). Оператор извинился, поэтому c05 = Да."},
+
+    {"conversation_id": "edge-ru-003", "target": ["c06"],
+     "answers": {"c01":"yes","c02":"na","c03":"na","c04":20,"c05":"yes","c06":10,"c07":"yes","c08":"no"},
+     "total": 100.0,
+     "facts": {"first_response_s": 46, "max_unwarned_gap_s": 0, "warned_gap_s": 515},
+     "notes": "Пауза 8,5 мин предупреждена в 01:30 («это займёт несколько минут, ожидайте») → нарушения нет."},
+
+    {"conversation_id": "edge-kz-001", "target": ["c01"],
+     "answers": {"c01":"no","c02":"na","c03":"na","c04":20,"c05":"yes","c06":10,"c07":"yes","c08":"no"},
+     "total": 84.62,
+     "facts": {"client_language": "KZ", "operator_first_reply_language": "RU"},
+     "notes": "Клиент пишет на казахском, первое приветствие оператора на русском (01:22)."},
+
+    {"conversation_id": "edge-ru-004", "target": ["c03", "c08"],
+     "answers": {"c01":"yes","c02":"na","c03":"no","c04":20,"c05":"yes","c06":10,"c07":"yes","c08":"yes"},
+     "total": 76.47,
+     "facts": {"identity_verified_at": "02:51", "first_disclosure_at": "01:35"},
+     "notes": "Сумма и статус перевода раскрыты в 01:35, идентификация только в 02:51. Флаг: раскрытие конфиденциальной информации."},
+
+    {"conversation_id": "edge-ru-005", "target": ["system"],
+     "answers": null,
+     "total": null,
+     "expected_behavior": "not_evaluable",
+     "facts": {"operator_messages": 0},
+     "notes": "Оператор не подключился. Система не вызывает LLM, ставит статус «не оценивается: нет реплик оператора», итог = null. Наше правило — подтвердить у организаторов."},
+
+    {"conversation_id": "edge-en-001", "target": ["c05", "c08"],
+     "answers": {"c01":"yes","c02":"na","c03":"na","c04":20,"c05":"no","c06":10,"c07":"yes","c08":"yes"},
+     "total": 76.92,
+     "notes": "02:02 «Are you blind?» — оскорбление клиента; жалоба 02:20 проигнорирована."},
+
+    {"conversation_id": "edge-kz-002", "target": ["c03", "c04", "c08"],
+     "answers": {"c01":"yes","c02":"na","c03":"no","c04":0,"c05":"yes","c06":10,"c07":"yes","c08":"yes"},
+     "total": 52.94,
+     "notes": "Клиент подтвердил свою личность, но оператор в 02:15 раскрыл баланс третьего лица (супруги). Правильный ответ — отказать.",
+     "uncertain": ["c03"]},
+
+    {"conversation_id": "edge-ru-006", "target": ["c05"],
+     "answers": {"c01":"yes","c02":"na","c03":"na","c04":20,"c05":"no","c06":10,"c07":"yes","c08":"no"},
+     "total": 76.92,
+     "notes": "Клиент выразил недовольство («второй день... уже надоело»), оператор никак на это не отреагировал."},
+
+    {"conversation_id": "edge-kz-003", "target": ["parsing", "c03", "c06"],
+     "answers": {"c01":"yes","c02":"yes","c03":"yes","c04":20,"c05":"yes","c06":10,"c07":"yes","c08":"no"},
+     "total": 100.0,
+     "facts": {"channel": "voice call", "first_response_s": 3, "hold_s": 246, "max_unwarned_gap_s": 0, "audio_url": null},
+     "notes": "Звонок на казахском, ISO-время, словесная идентификация по SMS (10:01:36) до раскрытия данных. Удержание 4 мин объявлено — не пауза. audio_url = null — интерфейс не должен падать."},
+
+    {"conversation_id": "edge-kz-004", "target": ["language"],
+     "answers": {"c01":"yes","c02":"na","c03":"na","c04":20,"c05":"yes","c06":10,"c07":"yes","c08":"no"},
+     "total": 100.0,
+     "facts": {"client_language": "KZ"},
+     "notes": "Клиент смешивает казахский и русский; основной язык казахский, оператор ответил на казахском."},
+
+    {"conversation_id": "edge-ru-007", "target": ["c04"],
+     "answers": {"c01":"yes","c02":"yes","c03":"na","c04":10,"c05":"yes","c06":10,"c07":"yes","c08":"no"},
+     "total": 87.5,
+     "notes": "Первый вопрос решён верно, на второй (02:05) дан ошибочный ответ: средства D-счёта нельзя использовать напрямую для покупки (см. ru-024, en-010 в DEV).",
+     "uncertain": ["c04"]}
+  ]
+}
