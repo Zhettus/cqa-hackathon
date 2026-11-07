@@ -15,11 +15,12 @@ from fastapi.testclient import TestClient  # noqa: E402
 from backend.main import create_app  # noqa: E402
 from tests.conftest import ROOT  # noqa: E402
 from tests.test_evaluator import OK, ScriptedProvider, answer  # noqa: E402
+from tests.test_normalize import NormalizingProvider  # noqa: E402
 
 
 @pytest.fixture
 def client(tmp_path):
-    prov = ScriptedProvider({cid: [answer(cid)] for cid in OK})
+    prov = NormalizingProvider({cid: [answer(cid)] for cid in OK}, uncertain={15})
     app = create_app(db_path=tmp_path / "api.db", data_dir=ROOT / "data", provider=prov)
     with TestClient(app) as c:
         c.provider = prov
@@ -109,8 +110,19 @@ def test_conversation_detail_and_audio(client, dev_records):
     assert m[21]["flags"] == ["client_not_hearing"] and m[21]["counts_for_operator"] is False
     assert m[1]["event"] == "agent_joined" and m[3]["audio_offset_s"] is not None
     assert [x["text"] for x in d["messages"]] == [t["text"] for t in dev_records["p4-ru-002"]["transcript"]]
+    # звонок: нормализация выполняется при первом открытии карточки и кэшируется
+    assert d["normalization"]["version"].startswith("n1-") and d["normalization_error"] is None
+    assert m[15]["text_clean"].endswith("(clean)") and m[15]["asr_uncertain"] is True and m[3]["asr_uncertain"] is False
+    assert m[15]["text"] == dev_records["p4-ru-002"]["transcript"][14]["text"]                 # оригинал не тронут
+    assert len(client.provider.norm_calls) == 1
+    client.get("/api/conversations/p4-ru-002")
+    assert len(client.provider.norm_calls) == 1                                                   # из кэша
     chat = client.get("/api/conversations/p1-ru-001").json()
     assert chat["audio"] is None and chat["messages"][0]["audio_offset_s"] is None
+    assert chat["normalization"] is None and chat["messages"][0]["text_clean"] is None           # чаты не нормализуются
+    # normalize=0 — без вызова модели (другой звонок, кэша нет)
+    other = client.get("/api/conversations/p4-ru-001", params={"normalize": 0}).json()
+    assert other["normalization"] is None and len(client.provider.norm_calls) == 1
     assert client.get("/api/conversations/p1-ru-001/audio").status_code == 404
     if (ROOT / "data" / "audio" / "p4-ru-002.mp3").exists():
         assert d["audio"] == {"available": True, "url": "/api/conversations/p4-ru-002/audio",

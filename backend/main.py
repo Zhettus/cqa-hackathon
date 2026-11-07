@@ -26,7 +26,7 @@ from backend.checklist import validate_checklist
 from backend.config import ROOT, get_settings
 from backend.evaluator import Evaluator
 from backend.llm import DEFAULT_MODELS, LLMError, get_provider
-from backend.normalize import text_hash
+from backend.normalize import normalize_call, normalizer_version, text_hash
 from backend.preprocess import preprocess
 from backend.scoring import AnswerError, validate_answer
 
@@ -263,12 +263,24 @@ async def list_conversations(request: Request, group_id: str | None = None, chan
 
 
 @router.get("/api/conversations/{conversation_id}")
-async def get_conversation(conversation_id: str, request: Request, conn: sqlite3.Connection = Conn):
+async def get_conversation(conversation_id: str, request: Request, normalize: bool = True,
+                           conn: sqlite3.Connection = Conn):
+    """Карточка диалога. Для звонков text_clean/asr_uncertain отдаются всегда: нормализация берётся из кэша,
+    при его отсутствии выполняется (один вызов модели, затем кэш); normalize=0 — не вызывать модель."""
     c = db.get_conversation(conn, conversation_id)
     pre = preprocess(c)
     audio = _audio_file(request, conversation_id)
     first_op = next((m.idx for m in pre.messages if m.counts_for_operator), None)
-    norm = db.latest_normalization(conn, conversation_id, text_hash(pre)) if c["channel"] == "voice call" else None
+    norm, norm_error = None, None
+    if c["channel"] == "voice call":
+        norm = db.latest_normalization(conn, conversation_id, text_hash(pre))
+        if norm is None and normalize:
+            try:
+                provider = request.app.state.provider_factory()
+                items, _ = await normalize_call(conn, provider, pre)
+                norm = {"version": normalizer_version(), "model": provider.model, "created_at": db.now(), "items": items}
+            except Exception as e:  # noqa: BLE001 — карточка должна открываться и без корректора
+                norm_error = f"{type(e).__name__}: {e}"
     nitems = norm["items"] if norm else {}
     return {
         "conversation_id": conversation_id, "group_id": c["group_id"], "channel": c["channel"],
@@ -277,6 +289,7 @@ async def get_conversation(conversation_id: str, request: Request, conn: sqlite3
                                              "content_type": mimetypes.guess_type(audio.name)[0] or "audio/mpeg"},
         "operator_start_n": first_op, "segments": _segments(pre.messages), "facts": pre.facts.model_dump(),
         "normalization": None if norm is None else {k: norm[k] for k in ("version", "model", "created_at")},
+        "normalization_error": norm_error,
         "messages": [{"n": m.idx, "timestamp": m.timestamp, "speaker": m.speaker, "text": m.text,
                       "clean_text": m.clean_text, "t_s": m.t_s, "audio_offset_s": m.audio_offset_s,
                       "segment": m.segment, "flags": m.flags, "counts_for_operator": m.counts_for_operator,

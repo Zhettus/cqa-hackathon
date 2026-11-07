@@ -1,5 +1,8 @@
 """Разбивает eval/gold_draft.json по полю split на gold_tune.json и gold_holdout.json.
 
+ВНИМАНИЕ (2026-11-07): gold_draft.json — архив; источник правды — gold_tune.json и gold_holdout.json,
+правки эталона вносятся туда. Повторный запуск с --force перезапишет их содержимым архива.
+
 Запуск: python scripts/split_gold.py [--src eval/gold_draft.json] [--force]
 
 Формат сохраняется: если каждая аннотация в исходнике занимает одну строку,
