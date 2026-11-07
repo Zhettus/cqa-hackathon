@@ -156,7 +156,7 @@ def test_aggregate_votes(ctype, answers, final, conf):
 def test_prompt_built_from_config(edge_records, dev_records, checklist_v1):
     sys_chat = build_system("agent chat")
     assert "R7." in sys_chat and "R11." in sys_chat and "Правила для звонков" not in sys_chat
-    assert "ровно в одном критерии" in sys_chat
+    assert "Недостаток оператора оценивается в том критерии" in sys_chat and "R13." in sys_chat
     assert "Ошибки распознавания не считаются ошибками" in build_system("voice call")
 
     pre = preprocess(edge_records["edge-ru-002"], checklist_v1["settings"])
