@@ -57,6 +57,8 @@ CREATE TABLE IF NOT EXISTS evaluations (
     facts_json        TEXT NOT NULL DEFAULT '{}',
     model_provider    TEXT,
     model_name        TEXT,
+    prompt_version    TEXT,
+    votes             INTEGER,
     batch_id          TEXT,
     duration_ms       INTEGER,
     created_at        TEXT NOT NULL,
@@ -171,9 +173,23 @@ def connect(path: str | Path = ":memory:") -> sqlite3.Connection:
     return conn
 
 
+MIGRATIONS = {"evaluations": {"prompt_version": "TEXT", "votes": "INTEGER"},
+              "criterion_results": {"meta_json": "TEXT NOT NULL DEFAULT '{}'"}}
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Добавляет колонки, появившиеся после создания БД (только ADD COLUMN, данные не меняются)."""
+    for table, cols in MIGRATIONS.items():
+        have = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+        for col, decl in cols.items():
+            if col not in have:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {decl}")
+
+
 def init_db(conn: sqlite3.Connection) -> None:
     """Создаёт схему; при первом старте кладёт чек-лист из SPEC как версию 1."""
     conn.executescript(SCHEMA + _triggers())
+    _migrate(conn)
     default = load_default_checklist()
     exists = conn.execute("SELECT 1 FROM checklists WHERE id = ?", (default["id"],)).fetchone()
     if not exists:
@@ -302,11 +318,12 @@ def insert_evaluation(conn: sqlite3.Connection, ev: dict, criteria: list[dict]) 
     with conn:
         conn.execute(
             "INSERT INTO evaluations(id, conversation_id, checklist_id, checklist_version, status, status_reason, "
-            "total, sections_json, flags_json, facts_json, model_provider, model_name, batch_id, duration_ms, "
-            "created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "total, sections_json, flags_json, facts_json, model_provider, model_name, prompt_version, votes, "
+            "batch_id, duration_ms, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (eid, ev["conversation_id"], ev["checklist_id"], ev["checklist_version"], ev["status"],
              ev.get("status_reason"), ev.get("total"), _j(ev.get("sections", [])), _j(ev.get("flags", [])),
-             _j(ev.get("facts", {})), ev.get("model_provider"), ev.get("model_name"), ev.get("batch_id"),
+             _j(ev.get("facts", {})), ev.get("model_provider"), ev.get("model_name"), ev.get("prompt_version"),
+             ev.get("votes"), ev.get("batch_id"),
              ev.get("duration_ms"), ev.get("created_at") or now()),
         )
         for c in criteria:
@@ -352,6 +369,19 @@ def evaluation_cost(conn: sqlite3.Connection, evaluation_id: str) -> dict:
                      "COALESCE(SUM(cost_usd),0), COALESCE(SUM(status != 'ok'),0) FROM llm_calls "
                      "WHERE evaluation_id = ?", (evaluation_id,)).fetchone()
     return {"calls": r[0], "tokens_in": r[1], "tokens_out": r[2], "usd": round(r[3], 6), "rejected_calls": r[4]}
+
+
+def find_cached_evaluation(conn: sqlite3.Connection, conversation_id: str, checklist_id: str,
+                           checklist_version: int, prompt_version: str, model_name: str | None,
+                           votes: int) -> dict | None:
+    """Последняя успешная оценка с тем же ключом: диалог, версия чек-листа, версия промпта, модель, голоса.
+    not_evaluable кэшируется независимо от модели (LLM не вызывалась)."""
+    row = conn.execute(
+        "SELECT id FROM evaluations WHERE conversation_id = ? AND checklist_id = ? AND checklist_version = ? "
+        "AND prompt_version = ? AND ((status = 'completed' AND model_name = ? AND votes = ?) "
+        "OR status = 'not_evaluable') ORDER BY created_at DESC, rowid DESC LIMIT 1",
+        (conversation_id, checklist_id, checklist_version, prompt_version, model_name, votes)).fetchone()
+    return get_evaluation(conn, row[0]) if row else None
 
 
 # --- логи LLM ---------------------------------------------------------------------------

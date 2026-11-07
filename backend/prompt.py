@@ -7,11 +7,19 @@
 """
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 from backend.preprocess import Preprocessed
 
 RULES_PATH = Path(__file__).resolve().parent.parent / "docs" / "rules.md"
+PROMPT_SCHEME = "v1"   # меняйте вручную при смысловой правке; хеш ниже ловит любую правку текста
+
+
+def prompt_version() -> str:
+    """Версия промпта для кэша оценок: схема + хеш этого файла и docs/rules.md."""
+    h = hashlib.sha256(Path(__file__).read_bytes() + RULES_PATH.read_bytes()).hexdigest()[:10]
+    return f"{PROMPT_SCHEME}-{h}"
 FLAG_VIOLATION_TYPES = ["none", "insult", "off_platform_paid_service", "confidential_disclosure", "other"]
 
 SPEAKER_RU = {"client": "клиент", "operator": "оператор", "bot": "бот", "system": "система"}

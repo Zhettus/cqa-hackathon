@@ -15,7 +15,7 @@ from backend.guards import apply_guards
 from backend.hints import find_hints
 from backend.llm import LLMError, LLMProvider, get_provider
 from backend.preprocess import Preprocessed, preprocess
-from backend.prompt import build_criterion_block, build_dialog_block, build_system, response_schema
+from backend.prompt import build_criterion_block, build_dialog_block, build_system, prompt_version, response_schema
 from backend.scoring import score, to_jsonable
 from backend.validator import feedback_text, validate_response
 
@@ -111,17 +111,26 @@ class Evaluator:
     # --- полная оценка ---------------------------------------------------------------------
     async def evaluate(self, conversation_id: str, checklist_id: str = "chat-quality",
                        checklist_version: int | None = None, *, votes: int | None = None,
-                       batch_id: str | None = None) -> dict:
+                       batch_id: str | None = None, use_cache: bool = False) -> dict:
+        """use_cache=True — вернуть готовую оценку с тем же ключом (диалог, версия чек-листа, версия промпта,
+        модель, голоса), если она есть. По умолчанию каждая оценка — новый вызов модели."""
         t0 = time.perf_counter()
         conv = db.get_conversation(self.conn, conversation_id)
         checklist = db.get_checklist(self.conn, checklist_id, checklist_version)
+        n_votes = votes or default_votes()
+        pv = prompt_version()
+        if use_cache:
+            cached = db.find_cached_evaluation(self.conn, conversation_id, checklist["id"], checklist["version"],
+                                               pv, self.provider.model, n_votes)
+            if cached:
+                return {**cached, "cached": True}
         settings = checklist.get("settings") or {}
         pre = preprocess(conv, settings)
         eid = db.new_id("ev")
         base = {"id": eid, "conversation_id": conversation_id, "checklist_id": checklist["id"],
                 "checklist_version": checklist["version"], "batch_id": batch_id,
                 "facts": pre.facts.model_dump(), "model_provider": self.provider.name,
-                "model_name": self.provider.model}
+                "model_name": self.provider.model, "prompt_version": pv, "votes": n_votes}
 
         if pre.facts.operator_messages == 0:                       # инвариант 10: LLM не вызывается
             db.insert_evaluation(self.conn, {**base, "status": "not_evaluable", "status_reason": NOT_EVALUABLE_REASON,
@@ -129,7 +138,6 @@ class Evaluator:
                                              "duration_ms": int((time.perf_counter() - t0) * 1000)}, [])
             return db.get_evaluation(self.conn, eid)
 
-        n_votes = votes or default_votes()
         ctx = {"evaluation_id": eid, "batch_id": batch_id, "pre": pre,
                "system": build_system(pre.channel), "dialog": build_dialog_block(pre, settings),
                "hints": {c["id"]: find_hints(c, pre) for c in checklist["criteria"]}}
