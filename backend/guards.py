@@ -110,3 +110,68 @@ def apply_guards(criterion: dict, answer: Any, facts: dict, settings: dict) -> t
         hits.append(GuardHit(g.get("id", "guard"), g.get("note", ""), [r[1] for r in results if r[0]], answer, new))
         answer = new
     return answer, hits
+
+
+# --- проверка конфига guards при сохранении версии чек-листа -------------------------------------
+def validate_guards(criterion: dict, settings: dict) -> list[str]:
+    """Ошибки конфигурации guards критерия (пусто — всё корректно). settings — уже с умолчаниями."""
+    from backend.preprocess import Facts
+    from backend.scoring import AnswerError, validate_answer
+
+    fact_names = set(Facts.model_fields)
+    guards = criterion.get("guards")
+    if guards is None:
+        return []
+    if not isinstance(guards, list):
+        return ["guards — список правил"]
+    msgs: list[str] = []
+    for k, g in enumerate(guards):
+        gid = (g.get("id") if isinstance(g, dict) else None) or f"#{k}"
+        if not isinstance(g, dict):
+            msgs.append(f"{gid}: правило — объект")
+            continue
+        when = g.get("when")
+        conds = None
+        if isinstance(when, dict):
+            conds = when.get("all") if "all" in when else when.get("any")
+        if not isinstance(conds, list) or not conds:
+            msgs.append(f"{gid}: when.any или when.all — непустой список условий")
+            conds = []
+        for c in conds:
+            if not isinstance(c, dict):
+                msgs.append(f"{gid}: условие — объект {{fact, op, value|value_from}}")
+                continue
+            if c.get("fact") not in fact_names:
+                msgs.append(f"{gid}: неизвестный факт {c.get('fact')!r}")
+            op = c.get("op")
+            if op not in OPS and op not in ("is_null", "not_null"):
+                msgs.append(f"{gid}: неизвестный оператор {op!r}")
+            if "value_from" in c:
+                scope, _, key = str(c["value_from"]).partition(".")
+                if scope == "settings":
+                    if key not in settings:
+                        msgs.append(f"{gid}: {c['value_from']!r} нет в settings и нет значения по умолчанию")
+                elif scope == "facts":
+                    if key not in fact_names:
+                        msgs.append(f"{gid}: {c['value_from']!r} — неизвестный факт")
+                else:
+                    msgs.append(f"{gid}: value_from должен начинаться с settings. или facts.")
+            elif op in OPS and "value" not in c:
+                msgs.append(f"{gid}: нужно value или value_from")
+        actions = [a for a in ("max_answer", "min_answer", "force_answer") if a in g]
+        if not actions:
+            msgs.append(f"{gid}: нужно действие max_answer, min_answer или force_answer")
+        for a in ("max_answer", "min_answer"):
+            if a in g:
+                if criterion.get("type") != "scale":
+                    msgs.append(f"{gid}: {a} допустим только для type=scale")
+                elif isinstance(g[a], bool) or not isinstance(g[a], (int, float)):
+                    msgs.append(f"{gid}: {a} — число")
+        if "force_answer" in g:
+            try:
+                validate_answer(criterion, g["force_answer"])
+            except AnswerError as e:
+                msgs.append(f"{gid}: force_answer: {e}")
+            except (KeyError, TypeError):
+                msgs.append(f"{gid}: force_answer нельзя проверить — у критерия нет корректных id/type")
+    return msgs

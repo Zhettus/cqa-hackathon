@@ -269,6 +269,9 @@ async def main_async(args) -> int:
                     raise
                 ev = {"conversation_id": cid, "status": "failed", "status_reason": str(e), "total": None,
                       "criteria": []}
+            except Exception as e:          # evaluator сам переводит сбои в failed; это страховка
+                ev = {"conversation_id": cid, "status": "failed", "status_reason": f"{type(e).__name__}: {e}",
+                      "total": None, "criteria": []}
             done["n"] += 1
             tag = " (кэш)" if ev.get("cached") else ""
             print(f"  [{done['n']}/{len(ids)}] {cid}: {ev['status']} {ev.get('total')}{tag}", flush=True)

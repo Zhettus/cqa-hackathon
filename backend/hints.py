@@ -20,3 +20,22 @@ def find_hints(criterion: dict, pre: Preprocessed) -> list[dict]:
                 out.append({"idx": m.idx, "name": h["name"], "label": h.get("label", h["name"]),
                             "match": hit.group(0)})
     return out
+
+
+def validate_hints(criterion: dict) -> list[str]:
+    """Ошибки конфигурации hints (пусто — всё корректно): name и компилируемый pattern."""
+    hints = criterion.get("hints")
+    if hints is None:
+        return []
+    if not isinstance(hints, list):
+        return ["hints — список шаблонов"]
+    msgs = []
+    for k, h in enumerate(hints):
+        if not isinstance(h, dict) or not h.get("name") or not isinstance(h.get("pattern"), str):
+            msgs.append(f"#{k}: шаблон — объект {{name, pattern[, label]}}")
+            continue
+        try:
+            re.compile(h["pattern"], re.I | re.U)
+        except re.error as e:
+            msgs.append(f"{h['name']}: некорректная регулярка: {e}")
+    return msgs

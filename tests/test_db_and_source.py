@@ -141,3 +141,36 @@ def test_import_errors(conn, monkeypatch):
     with pytest.raises(data_source.DataSourceError):
         data_source.parse_payload([{"conversation_id": "a", "channel": "agent chat",
                                     "transcript": [{"timestamp": "00:00", "speaker": "alien", "text": "x"}]}])
+
+
+def test_settings_guards_hints_validated_on_save(conn):
+    """B2: некорректные settings / guards / hints отклоняются при сохранении версии с понятной ошибкой."""
+    v1 = db.get_checklist(conn, "chat-quality", 1)
+    body = {k: v1[k] for k in ("id", "name", "sections", "criteria", "settings")}
+
+    def errors(mutate):
+        b = json.loads(json.dumps(body))
+        mutate(b)
+        return [e["path"] + ": " + e["message"] for e in validate_checklist(b)]
+
+    # settings как в примере контракта (без pause_threshold_s) — допустимы: ключ берётся из умолчаний
+    assert errors(lambda b: b.update(settings={"first_response_threshold_s": 180})) == []
+    assert any("settings.pause_threshold_s" in e for e in errors(lambda b: b["settings"].update(pause_threshold_s=-1)))
+    assert any("settings.rounding_decimals" in e for e in errors(lambda b: b["settings"].update(rounding_decimals=9)))
+    assert any("settings: " in e for e in errors(lambda b: b.update(settings=[1])))
+    c06 = next(i for i, c in enumerate(body["criteria"]) if c["id"] == "c06")
+    assert any("неизвестный факт" in e for e in
+               errors(lambda b: b["criteria"][c06]["guards"][0]["when"]["any"].append({"fact": "nope", "op": ">", "value": 1})))
+    assert any("нет в settings" in e for e in
+               errors(lambda b: b["criteria"][c06]["guards"][0]["when"]["any"][0].update(value_from="settings.missing")))
+    assert any("нужно действие" in e for e in errors(lambda b: b["criteria"][c06]["guards"][0].pop("max_answer")))
+    assert any("force_answer" in e for e in
+               errors(lambda b: b["criteria"][0].update(guards=[{"id": "g", "when": {"any": [{"fact": "hold_s", "op": ">", "value": 1}]},
+                                                                "force_answer": "maybe"}])))
+    c08 = next(i for i, c in enumerate(body["criteria"]) if c["id"] == "c08")
+    assert any("регулярка" in e for e in errors(lambda b: b["criteria"][c08]["hints"][0].update(pattern="(")))
+    with pytest.raises(db.ValidationFailed) as e:
+        bad = json.loads(json.dumps(body))
+        bad["settings"]["first_response_threshold_s"] = "три минуты"
+        db.insert_checklist_version(conn, bad, base_version=1)
+    assert "settings.first_response_threshold_s" in str(e.value)

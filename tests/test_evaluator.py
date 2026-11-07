@@ -242,3 +242,38 @@ def test_failure_reason_deduplicated(conn):
     script = {cid: [LLMError("HTTP 503")] for cid in OK}
     ev = run(Evaluator(conn, ScriptedProvider(script)).evaluate("edge-ru-001"))
     assert ev["status_reason"].count("HTTP 503") == 1 and "c01, c02" in ev["status_reason"]
+
+
+def test_settings_defaults_fill_missing_keys(conn):
+    """B2: версия чек-листа без pause_threshold_s — guard c06 работает с умолчанием (= first_response_threshold_s)."""
+    v1 = db.get_checklist(conn, "chat-quality", 1)
+    body = {k: v1[k] for k in ("id", "name", "sections", "criteria")}
+    body["settings"] = {"first_response_threshold_s": 180}
+    v2 = db.insert_checklist_version(conn, body, base_version=1, author="qa", comment="без pause_threshold_s")
+    script = {cid: [answer(cid)] for cid in OK}
+    ev = run(Evaluator(conn, ScriptedProvider(script)).evaluate("edge-ru-001", checklist_version=v2["version"]))
+    assert ev["status"] == "completed", ev["status_reason"]
+    c06 = next(c for c in ev["criteria"] if c["criterion_id"] == "c06")
+    assert c06["answer"] == 7 and "first_response_s = 311 > 180" in c06["guards"][0]["conditions"]
+    assert ev["facts"]["pause_threshold_s"] == 180
+
+
+def test_any_exception_becomes_failed_status(conn, monkeypatch):
+    """B2: сбой предобработки или кода оценки → статус failed с текстом ошибки, без исключения наружу."""
+    db.save_dataset(conn, "BAD", "local", [{"conversation_id": "mixed", "channel": "agent chat", "language": "RU",
+                                            "transcript": [{"timestamp": "00:00", "speaker": "client", "text": "a"},
+                                                           {"timestamp": "2026-11-05T10:00:00+00:00", "speaker": "operator",
+                                                            "text": "b"}]}])
+    prov = ScriptedProvider({})
+    ev = run(Evaluator(conn, prov).evaluate("mixed"))
+    assert ev["status"] == "failed" and "смешаны форматы времени" in ev["status_reason"] and prov.calls == []
+    assert ev["total"] is None and ev["criteria"] == []
+
+    def boom(*a, **kw):
+        raise RuntimeError("guard сломан")
+    monkeypatch.setattr("backend.evaluator.apply_guards", boom)
+    script = {cid: [answer(cid)] for cid in OK}
+    ev = run(Evaluator(conn, ScriptedProvider(script)).evaluate("edge-ru-001"))
+    assert ev["status"] == "failed" and ev["status_reason"] == "RuntimeError: guard сломан"
+    assert ev["facts"]["operator_messages"] > 0           # факты сохранены, LLM-вызовы залогированы
+    assert ev["cost"]["calls"] == 8

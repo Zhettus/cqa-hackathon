@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from backend import db
+from backend.checklist import effective_settings
 from backend.guards import apply_guards
 from backend.hints import find_hints
 from backend.llm import LLMError, LLMProvider, get_provider
@@ -125,13 +126,29 @@ class Evaluator:
                                                pv, self.provider.model, n_votes)
             if cached:
                 return {**cached, "cached": True}
-        settings = checklist.get("settings") or {}
-        pre = preprocess(conv, settings)
+        settings = effective_settings(checklist)
         eid = db.new_id("ev")
         base = {"id": eid, "conversation_id": conversation_id, "checklist_id": checklist["id"],
-                "checklist_version": checklist["version"], "batch_id": batch_id,
-                "facts": pre.facts.model_dump(), "model_provider": self.provider.name,
-                "model_name": self.provider.model, "prompt_version": pv, "votes": n_votes}
+                "checklist_version": checklist["version"], "batch_id": batch_id, "facts": {},
+                "model_provider": self.provider.name, "model_name": self.provider.model,
+                "prompt_version": pv, "votes": n_votes}
+        try:
+            return await self._run(conv, checklist, settings, base, n_votes, t0)
+        except LLMError as e:
+            if e.code == "auth":                                   # нет доступа к модели — дальше бессмысленно
+                raise
+            reason = str(e)
+        except Exception as e:                                     # любой сбой → failed, пакет продолжается
+            reason = f"{type(e).__name__}: {e}"
+        db.insert_evaluation(self.conn, {**base, "status": "failed", "total": None, "status_reason": reason,
+                                         "duration_ms": int((time.perf_counter() - t0) * 1000)}, [])
+        return db.get_evaluation(self.conn, eid)
+
+    async def _run(self, conv: dict, checklist: dict, settings: dict, base: dict, n_votes: int, t0: float) -> dict:
+        eid = base["id"]
+        batch_id = base["batch_id"]
+        pre = preprocess(conv, settings)
+        base["facts"] = pre.facts.model_dump()
 
         if pre.facts.operator_messages == 0:                       # инвариант 10: LLM не вызывается
             db.insert_evaluation(self.conn, {**base, "status": "not_evaluable", "status_reason": NOT_EVALUABLE_REASON,

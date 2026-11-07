@@ -4,12 +4,47 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from backend.guards import validate_guards
+from backend.hints import validate_hints
+
 DEFAULT_CHECKLIST_PATH = Path(__file__).parent / "checklists" / "default_v1.json"
 CRITERION_TYPES = {"binary", "scale", "flag"}
+
+# Умолчания settings: недостающие ключи версии чек-листа берутся отсюда.
+# pause_threshold_s по умолчанию равен first_response_threshold_s (как в preprocess).
+DEFAULT_SETTINGS = {"first_response_threshold_s": 180, "rounding_decimals": 2}
+THRESHOLD_KEYS = ("first_response_threshold_s", "pause_threshold_s")
+MAX_ROUNDING_DECIMALS = 6
 
 
 def load_default_checklist() -> dict:
     return json.loads(DEFAULT_CHECKLIST_PATH.read_text(encoding="utf-8"))
+
+
+def effective_settings(checklist: dict) -> dict:
+    """settings версии чек-листа, дополненные умолчаниями. Единственное место, где они сливаются."""
+    s = {**DEFAULT_SETTINGS, **(checklist.get("settings") or {})}
+    s.setdefault("pause_threshold_s", s["first_response_threshold_s"])
+    return s
+
+
+def _is_number(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def validate_settings(settings) -> list[dict]:
+    errs = []
+    if settings is None:
+        return errs
+    if not isinstance(settings, dict):
+        return [{"path": "settings", "message": "settings — объект"}]
+    for key in THRESHOLD_KEYS:
+        if key in settings and (not _is_number(settings[key]) or settings[key] < 0):
+            errs.append({"path": f"settings.{key}", "message": "неотрицательное число секунд"})
+    rd = settings.get("rounding_decimals")
+    if rd is not None and (isinstance(rd, bool) or not isinstance(rd, int) or not 0 <= rd <= MAX_ROUNDING_DECIMALS):
+        errs.append({"path": "settings.rounding_decimals", "message": f"целое от 0 до {MAX_ROUNDING_DECIMALS}"})
+    return errs
 
 
 def validate_checklist(cl: dict) -> list[dict]:
@@ -72,7 +107,14 @@ def validate_checklist(cl: dict) -> list[dict]:
                     err(f"{p}.scale", "максимальная ступень должна быть > 0")
         elif scale:
             err(f"{p}.scale", "шкала допустима только для type=scale")
-    settings = cl.get("settings", {})
-    if not isinstance(settings, dict):
-        err("settings", "settings — объект")
+    settings_errs = validate_settings(cl.get("settings"))
+    errs += settings_errs
+    if not settings_errs:
+        eff = effective_settings(cl)
+        for i, c in enumerate(criteria):
+            p = f"criteria[{i}]"
+            for msg in validate_guards(c, eff):
+                err(f"{p}.guards", msg)
+            for msg in validate_hints(c):
+                err(f"{p}.hints", msg)
     return errs
