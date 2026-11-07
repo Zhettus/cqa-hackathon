@@ -18,7 +18,7 @@ from backend.llm import LLMError, LLMProvider, get_provider
 from backend.preprocess import Preprocessed, preprocess
 from backend.prompt import build_criterion_block, build_dialog_block, build_system, prompt_version, response_schema
 from backend.scoring import score, to_jsonable
-from backend.validator import feedback_text, validate_response
+from backend.validator import feedback_text, resolve_evidence, validate_response
 
 MAX_REPAIRS = 2          # повторов после отказа валидатора (итого до 3 попыток на голос)
 NOT_EVALUABLE_REASON = "Нет реплик оператора"
@@ -76,6 +76,7 @@ class Evaluator:
             self._log(call, usage, status="invalid_response" if issues else "ok",
                       errors=[{"criterion_id": criterion["id"], **i.as_dict()} for i in issues])
             if not issues:
+                resp["evidence"] = resolve_evidence(resp, ctx["pre"])      # цитаты → подстроки оригинала
                 return Vote(answer=resp["answer"] if resp["answer"] != "na" else "na", resp=resp)
             last_error = "; ".join(i.message for i in issues)
             feedback = feedback_text(issues, usage.raw_response)
@@ -220,7 +221,8 @@ def finalize_criterion(criterion: dict, votes: list[Vote], facts: dict, settings
         evidence = {"kind": "na_condition", "quotes": [], "range": None,
                     "na_condition": r.get("na_reason") or criterion.get("na_condition")}
     elif r.get("evidence"):
-        evidence = {"kind": "quote", "quotes": [{"n": e["idx"], "text": e["quote"]} for e in r["evidence"]],
+        evidence = {"kind": "quote", "quotes": [{"n": e["idx"], "text": e["quote"], "model_quote": e["model_quote"]}
+                                                for e in r["evidence"]],
                     "range": _range(r), "na_condition": None}
     else:
         evidence = {"kind": "checked_range", "quotes": [], "range": _range(r), "na_condition": None}

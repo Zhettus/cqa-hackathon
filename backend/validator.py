@@ -22,32 +22,77 @@ class ValidationIssue:
         return {"code": self.code, "message": self.message}
 
 
-def _norm(s: str) -> str:
-    s = unicodedata.normalize("NFKC", s).lower().replace("ё", "е")
-    s = re.sub(r"[«»“”„\"'`’]", "", s)
-    return re.sub(r"\s+", " ", s).strip(" .,!?;:…-")
+_QUOTE_CHARS = set("«»“”„\"'`’")
+_STRIP_CHARS = " .,!?;:…-"
 
 
-def quote_ratio(quote: str, text: str) -> float:
-    """Лучшее совпадение цитаты с подстрокой текста (0..1)."""
-    q, t = _norm(quote), _norm(text)
-    if not q:
-        return 0.0
-    if q in t:
-        return 1.0
+def _norm_map(s: str) -> tuple[str, list[int]]:
+    """Нормализованный текст (NFKC, нижний регистр, ё→е, без кавычек, пробелы схлопнуты, края без
+    пунктуации) и для каждого его символа — индекс символа в ИСХОДНОЙ строке."""
+    out: list[str] = []
+    idx: list[int] = []
+    for i, ch in enumerate(s):
+        for c in unicodedata.normalize("NFKC", ch).lower().replace("ё", "е"):
+            if c in _QUOTE_CHARS:
+                continue
+            if c.isspace():
+                if out and out[-1] == " ":
+                    continue
+                c = " "
+            out.append(c)
+            idx.append(i)
+    a, b = 0, len(out)
+    while a < b and out[a] in _STRIP_CHARS:
+        a += 1
+    while b > a and out[b - 1] in _STRIP_CHARS:
+        b -= 1
+    return "".join(out[a:b]), idx[a:b]
+
+
+def match_quote(quote: str, text: str) -> tuple[float, str]:
+    """Лучшее совпадение цитаты с подстрокой текста: (похожесть 0..1, эта подстрока ИСХОДНОГО текста).
+    Сравнение нечёткое (регистр, ё/е, кавычки, пробелы, опечатки), но возвращаемая подстрока — всегда
+    дословный фрагмент оригинала: именно она хранится как доказательство."""
+    q, _ = _norm_map(quote)
+    t, idx = _norm_map(text)
+    if not q or not t:
+        return 0.0, ""
+
+    def orig(a: int, b: int) -> str:
+        return text[idx[a]: idx[b - 1] + 1].strip()
+
+    pos = t.find(q)
+    if pos >= 0:
+        return 1.0, orig(pos, pos + len(q))
     if len(q) >= len(t):
-        return SequenceMatcher(None, q, t).ratio()
-    best, n = 0.0, len(q)
-    for width in {n - 2, n, n + 2}:
+        return SequenceMatcher(None, q, t).ratio(), orig(0, len(t))
+    best, span, n = 0.0, (0, len(t)), len(q)
+    for width in sorted({n - 2, n, n + 2}):
         if width <= 0 or width > len(t):
             continue
         for i in range(0, len(t) - width + 1):
             r = SequenceMatcher(None, q, t[i:i + width]).ratio()
             if r > best:
-                best = r
+                best, span = r, (i, i + width)
                 if best >= 0.999:
-                    return best
-    return best
+                    return best, orig(*span)
+    return best, orig(*span)
+
+
+def quote_ratio(quote: str, text: str) -> float:
+    """Лучшее совпадение цитаты с подстрокой текста (0..1)."""
+    return match_quote(quote, text)[0]
+
+
+def resolve_evidence(resp: dict, pre: Preprocessed) -> list[dict]:
+    """После успешной валидации: доказательства с цитатой-подстрокой оригинала и формой модели.
+    [{idx, quote: <подстрока text реплики idx>, model_quote: <как написала модель>}]"""
+    texts = {m.idx: m.text for m in pre.messages}
+    out = []
+    for ev in resp.get("evidence") or []:
+        _, sub = match_quote(ev["quote"], texts[ev["idx"]])
+        out.append({"idx": ev["idx"], "quote": sub, "model_quote": ev["quote"]})
+    return out
 
 
 _QUOTED = re.compile(r"«[^»]*»|\"[^\"]*\"|“[^”]*”")

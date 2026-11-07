@@ -71,8 +71,8 @@ def test_full_flow_with_guard_and_cost(conn):
     assert crit["c06"]["answer"] == 7 and crit["c06"]["model_answer"] == 10
     assert "[Правило c06_timing]" in crit["c06"]["explanation"] and "10 → 7" in crit["c06"]["explanation"]
     assert ev["total"] == 93.08                               # совпадает с эталоном edge-ru-001
-    assert crit["c01"]["evidence"] == {"kind": "quote", "quotes": [{"n": 10, "text": "Меня зовут Арман"}],
-                                       "range": None, "na_condition": None}
+    assert crit["c01"]["evidence"] == {"kind": "quote", "range": None, "na_condition": None,
+                                       "quotes": [{"n": 10, "text": "Меня зовут Арман", "model_quote": "Меня зовут Арман"}]}
     assert crit["c02"]["evidence"]["kind"] == "na_condition" and crit["c02"]["points"] is None
     assert crit["c08"]["violation_type"] == "none" and crit["c08"]["confidence"] == 1.0
     assert len(prov.calls) == 8 and ev["cost"]["calls"] == 8
@@ -277,3 +277,17 @@ def test_any_exception_becomes_failed_status(conn, monkeypatch):
     assert ev["status"] == "failed" and ev["status_reason"] == "RuntimeError: guard сломан"
     assert ev["facts"]["operator_messages"] > 0           # факты сохранены, LLM-вызовы залогированы
     assert ev["cost"]["calls"] == 8
+
+
+def test_stored_quote_is_original_substring(conn):
+    """B3: evidence.quotes[].text — всегда подстрока исходного text реплики; форма модели — в model_quote."""
+    script = {cid: [answer(cid)] for cid in OK}
+    script["c01"] = [answer("c01", quote="меня зовут Арманн")]
+    script["c05"] = [answer("c05", quote="пожалуйста!")]
+    ev = run(Evaluator(conn, ScriptedProvider(script)).evaluate("edge-ru-001"))
+    assert ev["status"] == "completed"
+    texts = {m.idx: m.text for m in preprocess(db.get_conversation(conn, "edge-ru-001")).messages}
+    quotes = [q for c in ev["criteria"] for q in c["evidence"].get("quotes", [])]
+    assert quotes and all(q["text"] in texts[q["n"]] for q in quotes)
+    c01 = next(c for c in ev["criteria"] if c["criterion_id"] == "c01")
+    assert c01["evidence"]["quotes"] == [{"n": 10, "text": "Меня зовут Арман", "model_quote": "меня зовут Арманн"}]

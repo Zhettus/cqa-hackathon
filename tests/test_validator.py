@@ -99,3 +99,28 @@ def test_reasoning_must_be_russian(pre):
     assert codes(validate_response(CL["c01"], resp(reasoning=en), pre)) == ["reasoning_language"]
     ok = "Оператор ответил «Hi, I'm Tyler. I can see a withdrawal restriction on your account» в #11."
     assert validate_response(CL["c01"], resp(reasoning=ok), pre) == []
+
+
+@pytest.mark.parametrize("quote,text,expected", [
+    ("Меня зовут Арманн", "Здравствуйте! Меня зовут Арман. Спасибо за ожидание.", "Меня зовут Арман"),
+    ("меня зовут арман", "Здравствуйте! Меня зовут Арман.", "Меня зовут Арман"),
+    ("ежик тут", "Привет, «ёжик»  тут.", "ёжик»  тут"),
+    ("Hi, I'm Tyler", "Hi, I’m Tyler. I can help.", "Hi, I’m Tyler"),
+    ("Спасибо за ожидание", "Здравствуйте!\n\nСпасибо   за ожидание.", "Спасибо   за ожидание"),
+])
+def test_match_quote_returns_original_substring(quote, text, expected):
+    """B3: принятая цитата хранится как дословная подстрока исходного текста."""
+    from backend.validator import match_quote
+    ratio, sub = match_quote(quote, text)
+    assert ratio >= QUOTE_MIN_RATIO and sub == expected and sub in text
+
+
+def test_resolve_evidence(pre):
+    from backend.validator import resolve_evidence
+    r = resp(evidence=[{"idx": 10, "quote": "Меня зовут Арманн"}, {"idx": 10, "quote": "спасибо за ожидание"}])
+    assert validate_response(CL["c01"], r, pre) == []
+    out = resolve_evidence(r, pre)
+    text = {m.idx: m.text for m in pre.messages}[10]
+    assert [o["quote"] for o in out] == ["Меня зовут Арман", "Спасибо за ожидание"]
+    assert [o["model_quote"] for o in out] == ["Меня зовут Арманн", "спасибо за ожидание"]
+    assert all(o["quote"] in text for o in out)
