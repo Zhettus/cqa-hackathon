@@ -1,6 +1,10 @@
 """Пакетная оценка: фоновая задача в процессе API. Прогресс — в таблицах batches / batch_items,
 сами оценки — обычные записи evaluations (с batch_id). Отмена: уже готовые оценки сохраняются,
-очередь помечается cancelled."""
+очередь помечается cancelled.
+
+Ошибки провайдера: аутентификация и биллинг останавливают пакет (status failed с понятным сообщением,
+оставшиеся диалоги — provider_error, оценённые сохранены); лимит запросов (429) — пакет ждёт и повторяет
+диалог с растущей паузой (RATE_LIMIT_BACKOFF_S × 2^n), после исчерпания попыток — provider_error."""
 from __future__ import annotations
 
 import asyncio
@@ -10,9 +14,17 @@ from typing import Callable
 
 from backend import db
 from backend.evaluator import Evaluator
-from backend.llm import LLMError, LLMProvider
+from backend.llm import LLMError, LLMProvider, retry_rate_limited
 
 log = logging.getLogger(__name__)
+
+STOP_CODES = ("auth", "billing")
+PROVIDER_MESSAGES = {
+    "auth": "Провайдер отклонил ключ (аутентификация). Пакет остановлен, оценённые диалоги сохранены. "
+            "Проверьте LLM_API_KEY в .env и перезапустите сервер.",
+    "billing": "У провайдера закончился баланс/квота (биллинг). Пакет остановлен, оценённые диалоги сохранены. "
+               "Пополните баланс или переключите LLM_PROVIDER/LLM_BASE_URL в .env.",
+}
 
 
 class BatchRunner:
@@ -37,18 +49,28 @@ class BatchRunner:
             evaluator = Evaluator(conn, self.provider_factory())
             sem = asyncio.Semaphore(max(1, batch["concurrency"]))
             cid_, ver = batch["checklist"]["id"], batch["checklist"]["version"]
+            stop: dict[str, LLMError | None] = {"error": None}
 
             async def one(conversation_id: str) -> None:
                 async with sem:
+                    if stop["error"] is not None:
+                        db.set_batch_item(conn, batch_id, conversation_id, "provider_error",
+                                          error=f"не оценён: {stop['error'].code}")
+                        return
                     if db.batch_cancel_requested(conn, batch_id):
                         db.set_batch_item(conn, batch_id, conversation_id, "cancelled")
                         return
                     db.set_batch_item(conn, batch_id, conversation_id, "running")
                     try:
-                        ev = await evaluator.evaluate(conversation_id, cid_, ver, batch_id=batch_id)
-                    except LLMError as e:                      # только auth: evaluator остальное переводит в failed
-                        db.set_batch_item(conn, batch_id, conversation_id, "failed", error=str(e))
-                        raise
+                        ev = await retry_rate_limited(
+                            lambda: evaluator.evaluate(conversation_id, cid_, ver, batch_id=batch_id),
+                            on_wait=lambda s, n: db.set_batch_item(conn, batch_id, conversation_id, "running",
+                                                                   error=f"лимит запросов, ожидание {s:.0f} с (попытка {n})"))
+                    except LLMError as e:
+                        db.set_batch_item(conn, batch_id, conversation_id, "provider_error", error=str(e))
+                        if e.code in STOP_CODES:
+                            stop["error"] = e                  # остальные диалоги не начинаем
+                        return
                     except Exception as e:                     # страховка: пакет не должен падать из-за одного диалога
                         db.set_batch_item(conn, batch_id, conversation_id, "failed", error=f"{type(e).__name__}: {e}")
                         return
@@ -57,13 +79,10 @@ class BatchRunner:
                                       error=ev.get("status_reason") if ev["status"] == "failed" else None)
 
             queued = [i["conversation_id"] for i in batch["items"] if i["status"] == "queued"]
-            results = await asyncio.gather(*(one(c) for c in queued), return_exceptions=True)
-            auth = next((r for r in results if isinstance(r, LLMError)), None)
-            if auth is not None:
-                with conn:
-                    conn.execute("UPDATE batch_items SET status = 'cancelled' WHERE batch_id = ? AND status IN "
-                                 "('queued', 'running')", (batch_id,))
-                db.set_batch_status(conn, batch_id, "failed", error=str(auth))
+            await asyncio.gather(*(one(c) for c in queued))
+            if stop["error"] is not None:
+                e = stop["error"]
+                db.set_batch_status(conn, batch_id, "failed", error=f"{PROVIDER_MESSAGES.get(e.code, e.code)} ({e})")
             elif db.batch_cancel_requested(conn, batch_id):
                 db.set_batch_status(conn, batch_id, "cancelled")
             else:

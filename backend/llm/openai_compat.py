@@ -55,10 +55,16 @@ class OpenAICompatProvider(LLMProvider):
                 if r.status_code == 400 and self._json_schema_supported and "response_format" in r.text:
                     self._json_schema_supported = False      # сервер не знает json_schema → json_object
                     continue
-                if r.status_code in RETRY_STATUS:
+                if r.status_code == 429:
+                    last = LLMError(f"HTTP 429: лимит запросов провайдера: {r.text[:300]}", code="rate_limit")
+                elif r.status_code in RETRY_STATUS:
                     last = LLMError(f"HTTP {r.status_code}: {r.text[:300]}")
                 elif r.status_code in (401, 403):
                     raise LLMError(f"HTTP {r.status_code}: доступ запрещён, проверьте LLM_API_KEY", code="auth")
+                elif r.status_code == 402 or (r.status_code == 400 and any(
+                        m in r.text.lower() for m in ("insufficient", "credit", "billing", "quota"))):
+                    raise LLMError(f"HTTP {r.status_code}: баланс/квота провайдера исчерпаны: {r.text[:300]}",
+                                   code="billing")
                 elif r.status_code >= 400:
                     raise LLMError(f"HTTP {r.status_code}: {r.text[:300]}")
                 else:

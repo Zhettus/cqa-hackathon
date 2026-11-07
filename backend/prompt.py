@@ -16,14 +16,16 @@ RULES_PATH = Path(__file__).resolve().parent.parent / "docs" / "rules.md"
 PROMPT_SCHEME = "v1"   # меняйте вручную при смысловой правке; хеш ниже ловит любую правку текста
 
 
-def prompt_version(normalized: bool = False) -> str:
+def prompt_version(normalized: bool = False, mode: str = "per_criterion") -> str:
     """Версия промпта для кэша оценок: схема + хеш этого файла и docs/rules.md;
-    для звонков с нормализацией — плюс версия корректора."""
+    для звонков с нормализацией — плюс версия корректора; для режима per_dialog — суффикс |dialog."""
     h = hashlib.sha256(Path(__file__).read_bytes() + RULES_PATH.read_bytes()).hexdigest()[:10]
     base = f"{PROMPT_SCHEME}-{h}"
     if normalized:
         from backend.normalize import normalizer_version
-        return f"{base}+{normalizer_version()}"
+        base = f"{base}+{normalizer_version()}"
+    if mode == "per_dialog":
+        base = f"{base}|dialog"
     return base
 
 
@@ -224,4 +226,28 @@ def response_schema(criterion: dict) -> dict:
     if criterion["type"] == "flag":
         props["violation_type"] = {"type": "string",
                                    "enum": criterion.get("violation_types") or FLAG_VIOLATION_TYPES}
+    return {"type": "object", "properties": props, "required": list(props), "additionalProperties": False}
+
+
+# --- режим per_dialog: все критерии одним вызовом ------------------------------------------------
+def build_dialog_criteria_block(criteria: list[dict], hints: dict[str, list[dict]] | None = None,
+                                feedback: str | None = None) -> str:
+    """Блок с описанием всех критериев чек-листа (из конфига) для одного вызова на диалог."""
+    hints = hints or {}
+    parts = [f"ОЦЕНИ ОПЕРАТОРА ПО ВСЕМ {len(criteria)} КРИТЕРИЯМ ЧЕК-ЛИСТА и верни JSON: ключ — id критерия, "
+             "значение — объект ответа по критерию (evidence, checked_range, na_reason, reasoning, answer"
+             "[, violation_type]). Каждый недостаток относи к критерию, чья формулировка его описывает.", ""]
+    for c in criteria:
+        block = build_criterion_block(c, hints.get(c["id"]))
+        block = block.replace("Оцени оператора по этому критерию и верни JSON по схеме.", "").rstrip()
+        parts += [block, ""]
+    parts.append("Верни один JSON-объект со всеми критериями по схеме.")
+    if feedback:
+        parts.append(feedback)
+    return "\n".join(parts)
+
+
+def response_schema_all(criteria: list[dict]) -> dict:
+    """JSON-схема ответа по всем критериям сразу: {criterion_id: <схема критерия>}."""
+    props = {c["id"]: response_schema(c) for c in criteria}
     return {"type": "object", "properties": props, "required": list(props), "additionalProperties": False}

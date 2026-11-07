@@ -24,7 +24,7 @@ from backend import data_source, db
 from backend.scoring import score
 from backend.config import get_settings
 from backend.evaluator import Evaluator, default_votes
-from backend.llm import LLMError, get_provider
+from backend.llm import LLMError, get_provider, retry_rate_limited
 from backend.preprocess import preprocess
 from backend.prompt import prompt_version
 
@@ -193,7 +193,7 @@ def render(meta: dict, results: list[dict], mt: dict, edge: list[dict], checklis
     L = [f"# Прогон оценки {meta['started']}", "",
          f"- Эталон: {', '.join(meta['gold'])}",
          f"- Чек-лист: {checklist['id']} v{checklist['version']}; промпт: {meta['prompt_version']}",
-         f"- Модель: {meta['model']}; голосов: {meta['votes']}; нормализация звонков: "
+         f"- Модель: {meta['model']}; голосов: {meta['votes']}; режим: {meta.get('mode', 'per_criterion')}; нормализация звонков: "
          f"{'да' if meta.get('normalize') else 'нет'}" + (f"; только канал {meta['channel']}" if meta.get("channel") else ""),
          f"- Диалогов: {len(results)}; из кэша: {sum(r['cached'] for r in results)}; "
          f"стоимость новых вызовов: ${meta['usd']:.4f}; время: {meta['seconds']:.0f} с", ""]
@@ -272,9 +272,9 @@ async def main_async(args) -> int:
     checklist = db.get_checklist(conn, args.checklist, args.version)
     provider = get_provider()
     votes = args.votes or default_votes()
-    evaluator = Evaluator(conn, provider, normalize_calls=args.normalize)
-    print(f"Модель {provider.name}/{provider.model}, голосов {votes}, промпт {prompt_version()}, "
-          f"чек-лист v{checklist['version']}, диалогов {len(ids)}, нормализация звонков: "
+    evaluator = Evaluator(conn, provider, normalize_calls=args.normalize, mode=args.mode)
+    print(f"Модель {provider.name}/{provider.model}, голосов {votes}, промпт {prompt_version(mode=evaluator.mode)}, "
+          f"чек-лист v{checklist['version']}, диалогов {len(ids)}, режим {evaluator.mode}, нормализация звонков: "
           f"{'да' if args.normalize else 'нет'}", flush=True)
     t0 = time.time()
     sem = asyncio.Semaphore(args.parallel)
@@ -283,10 +283,12 @@ async def main_async(args) -> int:
     async def one(cid):
         async with sem:
             try:
-                ev = await evaluator.evaluate(cid, checklist["id"], checklist["version"], votes=votes,
-                                              use_cache=not args.no_cache)
+                ev = await retry_rate_limited(
+                    lambda: evaluator.evaluate(cid, checklist["id"], checklist["version"], votes=votes,
+                                               use_cache=not args.no_cache),
+                    on_wait=lambda s_, n: print(f"  {cid}: лимит запросов, ожидание {s_:.0f} с (попытка {n})", flush=True))
             except LLMError as e:
-                if e.code == "auth":
+                if e.code in ("auth", "billing", "rate_limit"):
                     raise
                 ev = {"conversation_id": cid, "status": "failed", "status_reason": str(e), "total": None,
                       "criteria": []}
@@ -301,7 +303,9 @@ async def main_async(args) -> int:
     try:
         evs = await asyncio.gather(*(one(c) for c in ids))
     except LLMError as e:
-        print(f"Остановлено: {e}", file=sys.stderr)
+        what = {"auth": "ключ провайдера не принят", "billing": "баланс/квота провайдера исчерпаны",
+                "rate_limit": "лимит запросов не снят после повторов"}.get(e.code, e.code)
+        print(f"Остановлено ({what}): {e}. Оценённые диалоги сохранены в БД.", file=sys.stderr)
         return 3
     records = {c["conversation_id"]: c for c in db.list_conversations(conn)}
     results = [compare(ev, gold[ev["conversation_id"]], checklist, records[ev["conversation_id"]]) for ev in evs]
@@ -309,7 +313,8 @@ async def main_async(args) -> int:
             for r in results if "target" in gold[r["conversation_id"]]]
     mt = metrics(results, checklist)
     meta = {"started": datetime.now().strftime("%Y-%m-%d %H:%M"), "gold": args.gold,
-            "prompt_version": prompt_version(), "model": f"{provider.name}/{provider.model}", "votes": votes,
+            "prompt_version": prompt_version(mode=evaluator.mode), "model": f"{provider.name}/{provider.model}",
+            "votes": votes, "mode": evaluator.mode,
             "normalize": bool(args.normalize), "channel": args.channel,
             "usd": sum((r["cost"] or {}).get("usd", 0) for r in results if not r["cached"]),
             "seconds": time.time() - t0}
@@ -341,6 +346,8 @@ def main() -> int:
     ap.add_argument("--no-cache", action="store_true")
     ap.add_argument("--db", default=None)
     ap.add_argument("--normalize", action="store_true", help="нормализовать текст звонков моделью (этап 5)")
+    ap.add_argument("--mode", default=None, choices=["per_criterion", "per_dialog"],
+                    help="режим вызовов (по умолчанию EVAL_MODE из .env или per_criterion)")
     ap.add_argument("--channel", default=None, help="только этот канал: 'voice call' | 'agent chat'")
     return asyncio.run(main_async(ap.parse_args()))
 

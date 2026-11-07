@@ -1,5 +1,15 @@
-"""Оценка одного диалога: preprocess → вызовы LLM по критериям (параллельно) → валидация с повторами →
-голосование → guards → scoring → сохранение. Каждый вызов модели логируется в llm_calls (инвариант 5)."""
+"""Оценка одного диалога: preprocess → вызовы LLM → валидация с повторами → голосование → guards → scoring →
+сохранение. Каждый вызов модели логируется в llm_calls (инвариант 5).
+
+Режимы (EVAL_MODE):
+- per_criterion — один вызов на критерий, параллельно (точнее, дороже по числу запросов);
+- per_dialog    — один вызов на весь диалог, JSON-ответ сразу по всем критериям (экономия запросов для
+                  бесплатных провайдеров с лимитами). Валидатор, guards, повторы и голосование — те же.
+
+Ошибки провайдера (аутентификация, биллинг, лимит запросов) не делают диалог failed: оценка не сохраняется,
+исключение LLMError с кодом из PROVIDER_ERROR_CODES уходит вызывающему (пакет/eval.run решают: остановиться
+или подождать и повторить).
+"""
 from __future__ import annotations
 
 import asyncio
@@ -14,18 +24,27 @@ from backend import db
 from backend.checklist import effective_settings
 from backend.guards import apply_guards
 from backend.hints import find_hints
-from backend.llm import LLMError, LLMProvider, get_provider
+from backend.llm import PROVIDER_ERROR_CODES, LLMError, LLMProvider, get_provider
 from backend.preprocess import Preprocessed, preprocess
-from backend.prompt import build_criterion_block, build_dialog_block, build_system, prompt_version, response_schema
+from backend.prompt import (build_criterion_block, build_dialog_block, build_dialog_criteria_block, build_system,
+                            prompt_version, response_schema, response_schema_all)
 from backend.scoring import score, to_jsonable
 from backend.validator import feedback_text, resolve_evidence, validate_response
 
 MAX_REPAIRS = 2          # повторов после отказа валидатора (итого до 3 попыток на голос)
 NOT_EVALUABLE_REASON = "Нет реплик оператора"
+EVAL_MODES = ("per_criterion", "per_dialog")
 
 
 def default_votes() -> int:
     return max(1, int(os.getenv("VOTES", "1")))
+
+
+def default_mode() -> str:
+    mode = (os.getenv("EVAL_MODE") or "per_criterion").strip().lower()
+    if mode not in EVAL_MODES:
+        raise ValueError(f"EVAL_MODE={mode!r}: допустимо {' | '.join(EVAL_MODES)}")
+    return mode
 
 
 @dataclass
@@ -42,49 +61,36 @@ class CriterionOutcome:
 
 
 class Evaluator:
-    def __init__(self, conn, provider: LLMProvider | None = None, normalize_calls: bool | None = None):
+    def __init__(self, conn, provider: LLMProvider | None = None, normalize_calls: bool | None = None,
+                 mode: str | None = None):
         self.conn = conn
         self.provider = provider or get_provider()
         # нормализация текста звонков моделью-корректором (этап 5); по умолчанию — NORMALIZE_CALLS из .env
         self.normalize_calls = (os.getenv("NORMALIZE_CALLS", "0").lower() in ("1", "true", "yes")
                                 if normalize_calls is None else normalize_calls)
+        self.mode = mode or default_mode()
+        if self.mode not in EVAL_MODES:
+            raise ValueError(f"mode={self.mode!r}: допустимо {' | '.join(EVAL_MODES)}")
 
-    # --- один голос по одному критерию с повторами ---------------------------------------
-    async def _one_vote(self, ctx: dict, criterion: dict, vote_no: int) -> Vote:
-        schema = response_schema(criterion)
-        feedback = None
-        last_error = "нет ответа"
-        for attempt in range(1, MAX_REPAIRS + 2):
-            user = build_criterion_block(criterion, ctx["hints"].get(criterion["id"]), feedback,
-                                         others=[c for c in ctx["criteria"] if c["id"] != criterion["id"]])
-            call = {"evaluation_id": ctx["evaluation_id"], "conversation_id": ctx["pre"].conversation_id,
-                    "batch_id": ctx["batch_id"], "attempt": attempt, "provider": self.provider.name,
-                    "model": self.provider.model, "started_at": db.now(),
-                    "request": {**self.provider.describe_request(ctx["system"], user, schema, ctx["dialog"]),
-                                "criterion_id": criterion["id"], "vote": vote_no}}
-            try:
-                resp, usage = await self.provider.complete_json(ctx["system"], user, schema,
-                                                                cache_prefix=ctx["dialog"])
-            except LLMError as e:
-                u = e.usage
-                self._log(call, u, status="invalid_response" if e.code == "bad_json" else "provider_error",
-                          errors=[{"criterion_id": criterion["id"], "code": e.code, "message": str(e)}])
-                last_error = str(e)
-                if e.code != "bad_json" or u is None:
-                    raise
-                feedback = ("ПРЕДЫДУЩИЙ ОТВЕТ ОТКЛОНЁН: это не корректный JSON-объект по схеме. "
-                            f"Предыдущий ответ: {u.raw_response[:2000]}\nВерни корректный JSON.")
-                continue
-            issues = validate_response(criterion, resp, ctx["pre"])
-            self._log(call, usage, status="invalid_response" if issues else "ok",
-                      errors=[{"criterion_id": criterion["id"], **i.as_dict()} for i in issues])
-            if not issues:
-                resp["evidence"] = resolve_evidence(resp, ctx["pre"])      # цитаты → подстроки оригинала
-                return Vote(answer=resp["answer"] if resp["answer"] != "na" else "na", resp=resp)
-            last_error = "; ".join(i.message for i in issues)
-            feedback = feedback_text(issues, usage.raw_response)
-        raise LLMError(f"{criterion['id']}: ответ не прошёл проверку после {MAX_REPAIRS} повторов: {last_error}",
-                       code="invalid_response")
+    # --- общий вызов модели с логированием ---------------------------------------------------
+    async def _call(self, ctx: dict, user: str, schema: dict, *, attempt: int, vote_no: int,
+                    criterion_id: str) -> tuple[dict | None, Any, dict, LLMError | None]:
+        """Один вызов модели. Возвращает (resp, usage, call, error). Ошибки провайдера пробрасываются;
+        bad_json возвращается как error для повтора с подсказкой."""
+        call = {"evaluation_id": ctx["evaluation_id"], "conversation_id": ctx["pre"].conversation_id,
+                "batch_id": ctx["batch_id"], "attempt": attempt, "provider": self.provider.name,
+                "model": self.provider.model, "started_at": db.now(),
+                "request": {**self.provider.describe_request(ctx["system"], user, schema, ctx["dialog"]),
+                            "criterion_id": criterion_id, "vote": vote_no, "mode": self.mode}}
+        try:
+            resp, usage = await self.provider.complete_json(ctx["system"], user, schema, cache_prefix=ctx["dialog"])
+        except LLMError as e:
+            self._log(call, e.usage, status="invalid_response" if e.code == "bad_json" else "provider_error",
+                      errors=[{"criterion_id": criterion_id, "code": e.code, "message": str(e)}])
+            if e.code != "bad_json" or e.usage is None:
+                raise
+            return None, e.usage, call, e
+        return resp, usage, call, None
 
     def _log(self, call: dict, usage, *, status: str, errors: list[dict]) -> None:
         if usage is not None:
@@ -97,6 +103,31 @@ class Evaluator:
                 "stop_reason": usage.stop_reason}}
         db.insert_llm_call(self.conn, {**call, "status": status, "validation_errors": errors})
 
+    # --- режим per_criterion: один голос по одному критерию с повторами ----------------------------
+    async def _one_vote(self, ctx: dict, criterion: dict, vote_no: int) -> Vote:
+        schema = response_schema(criterion)
+        feedback = None
+        last_error = "нет ответа"
+        for attempt in range(1, MAX_REPAIRS + 2):
+            user = build_criterion_block(criterion, ctx["hints"].get(criterion["id"]), feedback,
+                                         others=[c for c in ctx["criteria"] if c["id"] != criterion["id"]])
+            resp, usage, call, err = await self._call(ctx, user, schema, attempt=attempt, vote_no=vote_no,
+                                                      criterion_id=criterion["id"])
+            if err is not None:
+                last_error = str(err)
+                feedback = _bad_json_feedback(usage.raw_response)
+                continue
+            issues = validate_response(criterion, resp, ctx["pre"])
+            self._log(call, usage, status="invalid_response" if issues else "ok",
+                      errors=[{"criterion_id": criterion["id"], **i.as_dict()} for i in issues])
+            if not issues:
+                resp["evidence"] = resolve_evidence(resp, ctx["pre"])      # цитаты → подстроки оригинала
+                return Vote(answer=resp["answer"], resp=resp)
+            last_error = "; ".join(i.message for i in issues)
+            feedback = feedback_text(issues, usage.raw_response)
+        raise LLMError(f"{criterion['id']}: ответ не прошёл проверку после {MAX_REPAIRS} повторов: {last_error}",
+                       code="invalid_response")
+
     async def _criterion(self, ctx: dict, criterion: dict, n_votes: int) -> CriterionOutcome:
         out = CriterionOutcome(criterion)
         results = await asyncio.gather(*(self._one_vote(ctx, criterion, v) for v in range(1, n_votes + 1)),
@@ -104,8 +135,8 @@ class Evaluator:
         for r in results:
             if isinstance(r, Vote):
                 out.votes.append(r)
-            elif isinstance(r, LLMError) and r.code == "auth":
-                raise r                     # нет доступа к модели — оценивать бессмысленно
+            elif isinstance(r, LLMError) and r.code in PROVIDER_ERROR_CODES:
+                raise r                     # провайдер недоступен — оценивать бессмысленно
             elif isinstance(r, BaseException) and not isinstance(r, Exception):
                 raise r
             else:
@@ -114,18 +145,88 @@ class Evaluator:
             out.error = None        # хотя бы один валидный голос — критерий оценён
         return out
 
+    # --- режим per_dialog: один вызов на все критерии --------------------------------------------
+    async def _dialog_vote(self, ctx: dict, vote_no: int) -> dict[str, Vote | str]:
+        """Один голос по всем критериям. Возвращает {criterion_id: Vote | текст ошибки}."""
+        criteria = ctx["criteria"]
+        schema = response_schema_all(criteria)
+        feedback = None
+        pending = {c["id"]: c for c in criteria}        # критерии, по которым ещё нет валидного ответа
+        votes: dict[str, Vote | str] = {}
+        for attempt in range(1, MAX_REPAIRS + 2):
+            user = build_dialog_criteria_block(criteria, ctx["hints"], feedback)
+            resp, usage, call, err = await self._call(ctx, user, schema, attempt=attempt, vote_no=vote_no,
+                                                      criterion_id="*")
+            if err is not None:
+                feedback = _bad_json_feedback(usage.raw_response)
+                for cid in pending:
+                    votes[cid] = str(err)
+                continue
+            all_issues: list[dict] = []
+            fb_parts: list[str] = []
+            for cid, criterion in list(pending.items()):
+                sub = resp.get(cid) if isinstance(resp, dict) else None
+                if not isinstance(sub, dict):
+                    msg = f"{cid}: в ответе нет объекта по критерию"
+                    all_issues.append({"criterion_id": cid, "code": "bad_shape", "message": msg})
+                    fb_parts.append(f"- {msg}")
+                    votes[cid] = msg
+                    continue
+                issues = validate_response(criterion, sub, ctx["pre"])
+                if issues:
+                    all_issues += [{"criterion_id": cid, **i.as_dict()} for i in issues]
+                    fb_parts += [f"- {cid}: {i.message}" for i in issues]
+                    votes[cid] = "; ".join(i.message for i in issues)
+                else:
+                    sub["evidence"] = resolve_evidence(sub, ctx["pre"])
+                    votes[cid] = Vote(answer=sub["answer"], resp=sub)
+                    pending.pop(cid)
+            self._log(call, usage, status="invalid_response" if all_issues else "ok", errors=all_issues)
+            if not pending:
+                return votes
+            feedback = ("ПРЕДЫДУЩИЙ ОТВЕТ ОТКЛОНЁН ВАЛИДАТОРОМ по критериям " + ", ".join(pending) + ":\n"
+                        + "\n".join(fb_parts) + "\nВерни JSON заново по ВСЕМ критериям; по остальным можно повторить "
+                        "прежние ответы. Цитаты копируй дословно из текста реплики.")
+        for cid in pending:
+            votes[cid] = f"{cid}: ответ не прошёл проверку после {MAX_REPAIRS} повторов: {votes.get(cid)}"
+        return votes
+
+    async def _dialog_outcomes(self, ctx: dict, n_votes: int) -> list[CriterionOutcome]:
+        results = await asyncio.gather(*(self._dialog_vote(ctx, v) for v in range(1, n_votes + 1)),
+                                       return_exceptions=True)
+        outcomes = {c["id"]: CriterionOutcome(c) for c in ctx["criteria"]}
+        for r in results:
+            if isinstance(r, LLMError) and r.code in PROVIDER_ERROR_CODES:
+                raise r
+            if isinstance(r, BaseException):
+                if not isinstance(r, Exception):
+                    raise r
+                for o in outcomes.values():
+                    o.error = str(r)
+                continue
+            for cid, v in r.items():
+                if isinstance(v, Vote):
+                    outcomes[cid].votes.append(v)
+                else:
+                    outcomes[cid].error = v
+        for o in outcomes.values():
+            if o.votes:
+                o.error = None
+        return list(outcomes.values())
+
     # --- полная оценка ---------------------------------------------------------------------
     async def evaluate(self, conversation_id: str, checklist_id: str = "chat-quality",
                        checklist_version: int | None = None, *, votes: int | None = None,
                        batch_id: str | None = None, use_cache: bool = False) -> dict:
-        """use_cache=True — вернуть готовую оценку с тем же ключом (диалог, версия чек-листа, версия промпта,
-        модель, effort, голоса), если она есть. По умолчанию каждая оценка — новый вызов модели."""
+        """use_cache=True — вернуть готовую оценку с тем же ключом (диалог, версия чек-листа, версия промпта
+        с режимом, модель, effort, голоса), если она есть. По умолчанию каждая оценка — новый вызов модели.
+        Ошибки провайдера (auth/billing/rate_limit) пробрасываются, оценка не сохраняется."""
         t0 = time.perf_counter()
         conv = db.get_conversation(self.conn, conversation_id)
         checklist = db.get_checklist(self.conn, checklist_id, checklist_version)
         n_votes = votes or default_votes()
         normalize = self.normalize_calls and conv.get("channel") == "voice call"
-        pv = prompt_version(normalized=normalize)
+        pv = prompt_version(normalized=normalize, mode=self.mode)
         if use_cache:
             cached = db.find_cached_evaluation(self.conn, conversation_id, checklist["id"], checklist["version"],
                                                pv, self.provider.model, n_votes, self.provider.effort)
@@ -136,11 +237,11 @@ class Evaluator:
         base = {"id": eid, "conversation_id": conversation_id, "checklist_id": checklist["id"],
                 "checklist_version": checklist["version"], "batch_id": batch_id, "facts": {},
                 "model_provider": self.provider.name, "model_name": self.provider.model,
-                "prompt_version": pv, "votes": n_votes, "effort": self.provider.effort}
+                "prompt_version": pv, "votes": n_votes, "effort": self.provider.effort, "eval_mode": self.mode}
         try:
             return await self._run(conv, checklist, settings, base, n_votes, t0, normalize)
         except LLMError as e:
-            if e.code == "auth":                                   # нет доступа к модели — дальше бессмысленно
+            if e.code in PROVIDER_ERROR_CODES:                     # провайдер недоступен — не failed, а наружу
                 raise
             reason = str(e)
         except Exception as e:                                     # любой сбой → failed, пакет продолжается
@@ -170,7 +271,10 @@ class Evaluator:
                "system": build_system(pre.channel, normalized=normalize), "dialog": build_dialog_block(pre, settings),
                "hints": {c["id"]: find_hints(c, pre) for c in checklist["criteria"]},
                "criteria": checklist["criteria"]}
-        outcomes = await asyncio.gather(*(self._criterion(ctx, c, n_votes) for c in checklist["criteria"]))
+        if self.mode == "per_dialog":
+            outcomes = await self._dialog_outcomes(ctx, n_votes)
+        else:
+            outcomes = list(await asyncio.gather(*(self._criterion(ctx, c, n_votes) for c in checklist["criteria"])))
 
         failed = [o for o in outcomes if not o.votes]
         if failed:
@@ -193,6 +297,11 @@ class Evaluator:
                                          "sections": result["sections"], "flags": result["flags"],
                                          "duration_ms": int((time.perf_counter() - t0) * 1000)}, rows)
         return db.get_evaluation(self.conn, eid)
+
+
+def _bad_json_feedback(raw: str) -> str:
+    return ("ПРЕДЫДУЩИЙ ОТВЕТ ОТКЛОНЁН: это не корректный JSON-объект по схеме. "
+            f"Предыдущий ответ: {(raw or '')[:2000]}\nВерни корректный JSON.")
 
 
 # --- голосование и итог по критерию ----------------------------------------------------------

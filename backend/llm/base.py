@@ -63,32 +63,77 @@ class Usage:
     extra: dict = field(default_factory=dict)
 
 
+# Ошибки провайдера, при которых диалог НЕ помечается failed: оценка не сохраняется, решение принимает
+# вызывающий (пакет/eval.run): auth и billing — остановить, rate_limit — подождать и повторить.
+PROVIDER_ERROR_CODES = frozenset({"auth", "billing", "rate_limit"})
+RATE_LIMIT_BACKOFF_S = float(os.getenv("RATE_LIMIT_BACKOFF_S", "15"))
+RATE_LIMIT_ATTEMPTS = int(os.getenv("RATE_LIMIT_ATTEMPTS", "5"))
+
+
 class LLMError(RuntimeError):
     """Сбой вызова (сеть, провайдер, отказ модели, невалидный JSON). usage — если ответ был."""
 
     def __init__(self, message: str, usage: Usage | None = None, code: str = "provider_error"):
         super().__init__(message)
         self.usage = usage
-        self.code = code   # provider_error | auth | bad_json | refusal | max_tokens | invalid_response
+        # provider_error | auth | billing | rate_limit | bad_json | refusal | max_tokens | invalid_response
+        self.code = code
+
+
+async def retry_rate_limited(fn, *, attempts: int | None = None, base_s: float | None = None,
+                             on_wait=None, sleep=asyncio.sleep):
+    """Вызывает fn() (корутина); при LLMError(code=rate_limit) ждёт base_s × 2^n и повторяет, до attempts раз.
+    Остальные ошибки пробрасываются сразу."""
+    attempts = RATE_LIMIT_ATTEMPTS if attempts is None else attempts
+    base_s = RATE_LIMIT_BACKOFF_S if base_s is None else base_s
+    for n in range(attempts + 1):
+        try:
+            return await fn()
+        except LLMError as e:
+            if e.code != "rate_limit" or n >= attempts:
+                raise
+            wait = base_s * (2 ** n)
+            if on_wait:
+                on_wait(wait, n + 1)
+            await sleep(wait)
 
 
 class LLMProvider(ABC):
     name: str = "base"
 
     def __init__(self, model: str, *, timeout_s: float = 120.0, max_retries: int = 3,
-                 concurrency: int = 8, prices: Prices | None = None):
+                 concurrency: int = 8, prices: Prices | None = None, rate_limit_rpm: int = 0):
         self.model = model
         self.effort: str | None = None      # глубина рассуждения (есть не у всех провайдеров); часть ключа кэша оценок
         self.timeout_s = timeout_s
         self.max_retries = max_retries
         self.prices = prices or Prices.from_env(model)
         self._semaphore = asyncio.Semaphore(max(1, concurrency))
+        # RATE_LIMIT_RPM: не чаще N запросов в минуту (бесплатные тарифы); 0 — без ограничения
+        self.rate_limit_rpm = max(0, int(rate_limit_rpm))
+        self._min_interval = 60.0 / self.rate_limit_rpm if self.rate_limit_rpm else 0.0
+        self._next_slot = 0.0
+        self._slot_lock: asyncio.Lock | None = None
+
+    async def _throttle(self) -> None:
+        """Равномерно распределяет старты запросов: не чаще rate_limit_rpm в минуту."""
+        if not self._min_interval:
+            return
+        if self._slot_lock is None:
+            self._slot_lock = asyncio.Lock()
+        async with self._slot_lock:
+            now = time.monotonic()
+            start = max(now, self._next_slot)
+            self._next_slot = start + self._min_interval
+        if start > now:
+            await asyncio.sleep(start - now)
 
     async def complete_json(self, system: str, user: str, schema: dict, *,
                             cache_prefix: str | None = None) -> tuple[dict, Usage]:
         """system — стабильная часть; cache_prefix — общий для всех критериев диалога блок
         (кэшируется, если провайдер умеет); user — переменная часть. Ограничение параллельности — семафор."""
         async with self._semaphore:
+            await self._throttle()
             t0 = time.perf_counter()
             try:
                 text, usage = await self._call(system, user, schema, cache_prefix)

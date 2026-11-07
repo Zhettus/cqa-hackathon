@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS evaluations (
     prompt_version    TEXT,
     votes             INTEGER,
     effort            TEXT,
+    eval_mode         TEXT,
     batch_id          TEXT,
     duration_ms       INTEGER,
     created_at        TEXT NOT NULL,
@@ -161,7 +162,7 @@ CREATE TABLE IF NOT EXISTS batches (
 CREATE TABLE IF NOT EXISTS batch_items (
     batch_id        TEXT NOT NULL REFERENCES batches(id),
     conversation_id TEXT NOT NULL,
-    status          TEXT NOT NULL CHECK (status IN ('queued','running','completed','not_evaluable','failed','cancelled')),
+    status          TEXT NOT NULL CHECK (status IN ('queued','running','completed','not_evaluable','failed','cancelled','provider_error')),
     evaluation_id   TEXT,
     total           REAL,
     error           TEXT,
@@ -220,17 +221,34 @@ def connect(path: str | Path = ":memory:") -> sqlite3.Connection:
     return conn
 
 
-MIGRATIONS = {"evaluations": {"prompt_version": "TEXT", "votes": "INTEGER", "effort": "TEXT"},
+MIGRATIONS = {"evaluations": {"prompt_version": "TEXT", "votes": "INTEGER", "effort": "TEXT", "eval_mode": "TEXT"},
               "criterion_results": {"meta_json": "TEXT NOT NULL DEFAULT '{}'"}}
 
 
 def _migrate(conn: sqlite3.Connection) -> None:
-    """Добавляет колонки, появившиеся после создания БД (только ADD COLUMN, данные не меняются)."""
+    """Добавляет колонки, появившиеся после создания БД (только ADD COLUMN, данные не меняются).
+    batch_items (изменяемая таблица прогресса) пересоздаётся, если в её CHECK нет статуса provider_error."""
     for table, cols in MIGRATIONS.items():
         have = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
         for col, decl in cols.items():
             if col not in have:
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {decl}")
+    ddl = conn.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='batch_items'").fetchone()
+    if ddl and "provider_error" not in (ddl[0] or ""):
+        conn.executescript("""
+            ALTER TABLE batch_items RENAME TO batch_items_old;
+            CREATE TABLE batch_items (
+                batch_id        TEXT NOT NULL REFERENCES batches(id),
+                conversation_id TEXT NOT NULL,
+                status          TEXT NOT NULL CHECK (status IN ('queued','running','completed','not_evaluable','failed','cancelled','provider_error')),
+                evaluation_id   TEXT,
+                total           REAL,
+                error           TEXT,
+                PRIMARY KEY (batch_id, conversation_id)
+            );
+            INSERT INTO batch_items SELECT batch_id, conversation_id, status, evaluation_id, total, error FROM batch_items_old;
+            DROP TABLE batch_items_old;
+        """)
 
 
 def init_db(conn: sqlite3.Connection) -> None:
@@ -371,11 +389,11 @@ def insert_evaluation(conn: sqlite3.Connection, ev: dict, criteria: list[dict]) 
         conn.execute(
             "INSERT INTO evaluations(id, conversation_id, checklist_id, checklist_version, status, status_reason, "
             "total, sections_json, flags_json, facts_json, model_provider, model_name, prompt_version, votes, "
-            "effort, batch_id, duration_ms, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "effort, eval_mode, batch_id, duration_ms, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (eid, ev["conversation_id"], ev["checklist_id"], ev["checklist_version"], ev["status"],
              ev.get("status_reason"), ev.get("total"), _j(ev.get("sections", [])), _j(ev.get("flags", [])),
              _j(ev.get("facts", {})), ev.get("model_provider"), ev.get("model_name"), ev.get("prompt_version"),
-             ev.get("votes"), ev.get("effort"), ev.get("batch_id"),
+             ev.get("votes"), ev.get("effort"), ev.get("eval_mode"), ev.get("batch_id"),
              ev.get("duration_ms"), ev.get("created_at") or now()),
         )
         for c in criteria:
@@ -730,7 +748,7 @@ def search_conversations(conn: sqlite3.Connection, *, group_id: str | None = Non
 
 
 # --- пакеты -----------------------------------------------------------------------------
-BATCH_ITEM_DONE = ("completed", "not_evaluable", "failed", "cancelled")
+BATCH_ITEM_DONE = ("completed", "not_evaluable", "failed", "cancelled", "provider_error")
 
 
 def insert_batch(conn: sqlite3.Connection, *, checklist_id: str, checklist_version: int,
@@ -780,7 +798,7 @@ def _batch(conn: sqlite3.Connection, row: sqlite3.Row, with_items: bool) -> dict
     items = [dict(r) for r in conn.execute("SELECT conversation_id, status, evaluation_id, total, error FROM batch_items "
                                            "WHERE batch_id = ? ORDER BY rowid", (d["id"],))]
     counts = {s: sum(1 for i in items if i["status"] == s)
-              for s in ("queued", "running", "completed", "not_evaluable", "failed", "cancelled")}
+              for s in ("queued", "running", "completed", "not_evaluable", "failed", "cancelled", "provider_error")}
     total = len(items)
     done = sum(counts[s] for s in BATCH_ITEM_DONE)
     cost = conn.execute("SELECT COALESCE(SUM(tokens_in),0), COALESCE(SUM(tokens_out),0), COALESCE(SUM(cost_usd),0) "
