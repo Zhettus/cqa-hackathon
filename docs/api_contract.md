@@ -1,4 +1,11 @@
-# REST API — контракт (черновик v0.1, на одобрение)
+# REST API — контракт (v0.1, реализован в `backend/main.py`)
+
+Отличия реализации от текста ниже (состояние на 2026-11-07): `final` в ответах
+`GET /api/evaluations/{id}` и решения по апелляции пока `null` — пересчёт итога с
+учётом решений делается следующим этапом; `GET /api/conversations/{id}` дополнительно
+отдаёт `facts`; diff версий дополнительно отдаёт `other_changed` (name/sections/settings);
+`summary` результатов дополнительно содержит `failed`; объект оценки содержит
+`prompt_version`, `votes`, `effort`. Тесты эндпоинтов — `tests/test_api.py`.
 
 Контракт для параллельной работы backend и frontend. Всё под префиксом `/api`,
 JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся тем же FastAPI (`/ui/`),
