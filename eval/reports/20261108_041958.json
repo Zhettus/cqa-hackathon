@@ -1,0 +1,3524 @@
+{
+ "meta": {
+  "started": "2026-11-08 04:19",
+  "gold": [
+   "eval/gold_tune.json"
+  ],
+  "prompt_version": "v1-d4b1c3ec8a|dialog",
+  "model": "openai/cqa-qwen14b",
+  "votes": 1,
+  "mode": "per_dialog",
+  "normalize": false,
+  "channel": null,
+  "usd": 0.0,
+  "seconds": 3123.359833717346
+ },
+ "results": [
+  {
+   "conversation_id": "p1-ru-001",
+   "status": "completed",
+   "language": "RU",
+   "channel": "agent chat",
+   "total": 100.0,
+   "gold_total": 100.0,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор поздоровался и представился в первой реплике на языке клиента.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте! Меня зовут Алина",
+        "model_quote": "Здравствуйте! Меня зовут Алина."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "yes",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор учёл известные детали и дал конкретный совет, не переспрашивая.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "В веб-версии откройте вкладку «Кабинет». Название тарифа будет под вашим ФИО",
+        "model_quote": "В веб-версии откройте вкладку «Кабинет». Название тарифа будет под вашим ФИО."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "N/A"
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "accepted": false,
+     "explanation": "Запрос клиента не требовал идентификации.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Запрос не требовал идентификации (например, общий вопрос о тарифах)."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": 20,
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор дал конкретный совет, который помог клиенту найти информацию о тарифе.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "В веб-версии откройте вкладку «Кабинет». Название тарифа будет под вашим ФИО",
+        "model_quote": "В веб-версии откройте вкладку «Кабинет». Название тарифа будет под вашим ФИО."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиент не выразил недовольства или неудобства.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 10,
+     "match": true,
+     "accepted": false,
+     "explanation": "Ответы оператора были ясные и связные, без существенных сбоев.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор подвёл итог и попрощался.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 12,
+        "text": "Пожалуйста. Хорошего вечера",
+        "model_quote": "Пожалуйста. Хорошего вечера!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Нарушений не найдено.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "Эталонный чистый диалог. Клиент до подключения указал «с ноутбука», оператор сразу дал путь в веб-версии.",
+   "cached": false,
+   "cost": {
+    "calls": 2,
+    "tokens_in": 10837,
+    "tokens_out": 1493,
+    "usd": 0.0,
+    "rejected_calls": 1
+   },
+   "status_reason": null,
+   "expected_status": "completed",
+   "status_mismatch": false
+  },
+  {
+   "conversation_id": "p1-ru-003",
+   "status": "completed",
+   "language": "RU",
+   "channel": "agent chat",
+   "total": 87.5,
+   "gold_total": 81.88,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор поздоровался и представился в первой реплике на языке клиента.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 11,
+        "text": "Добрый день! Я Лера из поддержки. Вы через приложение или веб-версию смотрите",
+        "model_quote": "Добрый день! Я Лера из поддержки. Вы через приложение или веб-версию смотрите?"
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор уточнил, через какую версию клиент смотрит информацию, что необходимо для ответа на вопрос.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 11,
+        "text": "Вы через приложение или веб-версию смотрите",
+        "model_quote": "Вы через приложение или веб-версию смотрите?"
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиент спрашивал о комиссии на тарифе, что не требует идентификации.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Запрос не требовал идентификации"
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 10,
+     "system": 15,
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор ответил на вопрос клиента, но не указал конкретную комиссию, что является второстепенной деталью.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 15,
+        "text": "Название тарифа смотрите там же. Хорошего дня",
+        "model_quote": "Название тарифа смотрите там же. Хорошего дня!"
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 1,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиент не выразил недовольства, оператор вёл себя вежливо.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 11,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 7,
+     "system": 10,
+     "match": false,
+     "accepted": false,
+     "explanation": "Ответы оператора были ясные и связные, без существенных сбоев.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 11,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 1,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "no",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор не подвёл итог или не предложил дальнейшую помощь, просто попрощался.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 15,
+        "text": "Название тарифа смотрите там же. Хорошего дня",
+        "model_quote": "Название тарифа смотрите там же. Хорошего дня!"
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Нарушений, описанных в критерии, не было.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 11,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "Вопрос о комиссии (международный рынок, покупка) проигнорирован; в 05:07 ответ не по теме.",
+   "cached": false,
+   "cost": {
+    "calls": 2,
+    "tokens_in": 11029,
+    "tokens_out": 1574,
+    "usd": 0.0,
+    "rejected_calls": 1
+   },
+   "status_reason": null,
+   "expected_status": "completed",
+   "status_mismatch": false
+  },
+  {
+   "conversation_id": "p1-ru-005",
+   "status": "completed",
+   "language": "RU",
+   "channel": "agent chat",
+   "total": 100.0,
+   "gold_total": 86.15,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор поздоровался и представился в первой реплике на языке клиента.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Добрый день, меня зовут Нина",
+        "model_quote": "Добрый день, меня зовут Нина."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 16
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "yes",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор учёл известные детали и уточнил недостающее до ответа.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Сумму комиссии без условий вашего банка я назвать не могу",
+        "model_quote": "Сумму комиссии без условий вашего банка я назвать не могу."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 16
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "N/A"
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "accepted": false,
+     "explanation": "Запрос клиента не требовал идентификации.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Запрос не требовал идентификации"
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": 20,
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор дал полезную информацию и предложил проверить комиссию в банке.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 16,
+        "text": "Перед переводом проверьте комиссию в банке. До свидания",
+        "model_quote": "Перед переводом проверьте комиссию в банке. До свидания!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 16
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиент не выразил недовольства или неудобства.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 16
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 4,
+     "system": 10,
+     "match": false,
+     "accepted": false,
+     "explanation": "Ответы ясные и связные, клиенту не пришлось переспрашивать.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 16
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 2,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор подвёл итог и попрощался.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 16,
+        "text": "Перед переводом проверьте комиссию в банке. До свидания",
+        "model_quote": "Перед переводом проверьте комиссию в банке. До свидания!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 16
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Нарушений не найдено.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 16
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "04:23 «Там же где перевод... сверху вниз в меню» — клиенту пришлось переспросить (05:02).",
+   "cached": false,
+   "cost": {
+    "calls": 2,
+    "tokens_in": 11195,
+    "tokens_out": 1541,
+    "usd": 0.0,
+    "rejected_calls": 1
+   },
+   "status_reason": null,
+   "expected_status": "completed",
+   "status_mismatch": false
+  },
+  {
+   "conversation_id": "p1-ru-007",
+   "status": "completed",
+   "language": "RU",
+   "channel": "agent chat",
+   "total": 87.5,
+   "gold_total": 84.62,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор поздоровался и представился в первой реплике на языке клиента.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 11,
+        "text": "Здравствуйте, я Дамир",
+        "model_quote": "Здравствуйте, я Дамир."
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 13
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "yes",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор уточнил, как клиент может обновить анкетные данные, что было недостающей информацией.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 11,
+        "text": "В приложении откройте «Меню → Поручения → Персональные данные → Изменение сведений",
+        "model_quote": "В приложении откройте «Меню → Поручения → Персональные данные → Изменение сведений»."
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 13
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "N/A"
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиенту не требовалась идентификация для получения информации о том, как обновить анкетные данные.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Запрос не требовал идентификации"
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 10,
+     "system": 15,
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор дал клиенту инструкцию по обновлению анкетных данных и завершил диалог, но не уточнил, когда клиент сможет повторно попробовать выводить деньги.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 11,
+        "text": "В приложении откройте «Меню → Поручения → Персональные данные → Изменение сведений",
+        "model_quote": "В приложении откройте «Меню → Поручения → Персональные данные → Изменение сведений»."
+       },
+       {
+        "n": 13,
+        "text": "Путь к обновлению я указал. Хорошего дня",
+        "model_quote": "Путь к обновлению я указал. Хорошего дня!"
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 13
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 1,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиент не выразил недовольства или неудобства.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 11,
+       "to_n": 13
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 10,
+     "match": true,
+     "accepted": false,
+     "explanation": "Ответы оператора были ясными и связными, без заметных сбоев или противоречий.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 11,
+       "to_n": 13
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "no",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор не подвёл итог или не предложил дальнейшую помощь перед прощанием.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 13,
+        "text": "Путь к обновлению я указал. Хорошего дня",
+        "model_quote": "Путь к обновлению я указал. Хорошего дня!"
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 13
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Нарушений, описанных в критерии, не было.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 11,
+       "to_n": 13
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "Вопрос «когда снова подавать вывод» (03:21) остался без ответа.",
+   "cached": false,
+   "cost": {
+    "calls": 2,
+    "tokens_in": 10925,
+    "tokens_out": 1664,
+    "usd": 0.0,
+    "rejected_calls": 1
+   },
+   "status_reason": null,
+   "expected_status": "completed",
+   "status_mismatch": false
+  },
+  {
+   "conversation_id": "p1-ru-018",
+   "status": "completed",
+   "language": "RU",
+   "channel": "agent chat",
+   "total": 36.0,
+   "gold_total": 20.0,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор поздоровался и представился в первой реплике на языке клиента.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, меня зовут Саша",
+        "model_quote": "Здравствуйте, меня зовут Саша."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор не уточнил детали, необходимые для ответа, и не переспросил уже сказанное.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Сейчас точно биржа отменяет ваш приказ, ничего не сделать",
+        "model_quote": "Сейчас точно биржа отменяет ваш приказ, ничего не сделать."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "yes",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор не запросил идентификацию, но и раскрытия данных не было.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "N/A"
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 0,
+     "system": 0,
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор не дал конкретного ответа на вопрос клиента и не предложил дальнейших действий.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Сейчас точно биржа отменяет ваш приказ, ничего не сделать",
+        "model_quote": "Сейчас точно биржа отменяет ваш приказ, ничего не сделать."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиент выразил недовольство, но оператор не отреагировал на конкретную проблему.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 11,
+        "text": "Почему точно? Я даже бумагу вам не назвал",
+        "model_quote": "Почему точно? Я даже бумагу вам не назвал."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 4,
+     "system": 4,
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор дал неясный ответ, клиенту пришлось переспрашивать.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Сейчас точно биржа отменяет ваш приказ, ничего не сделать",
+        "model_quote": "Сейчас точно биржа отменяет ваш приказ, ничего не сделать."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор закрыл чат без прощания или предложения дальнейших действий.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Нарушений, описанных в критерии, не найдено.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "02:16 категоричный неверный вывод без уточнения; 03:20 «Тогда не знаю»; чат закрыт оператором.",
+   "cached": false,
+   "cost": {
+    "calls": 1,
+    "tokens_in": 5376,
+    "tokens_out": 778,
+    "usd": 0.0,
+    "rejected_calls": 0
+   },
+   "status_reason": null,
+   "expected_status": "completed",
+   "status_mismatch": false
+  },
+  {
+   "conversation_id": "p1-ru-022",
+   "status": "completed",
+   "language": "RU",
+   "channel": "agent chat",
+   "total": 10.0,
+   "gold_total": 31.25,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор поздоровался и представился в первой реплике на языке клиента.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, я Кирилл",
+        "model_quote": "Здравствуйте, я Кирилл."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор не учёл потребность клиента в консультации и предложил неподобающую услугу.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, я Кирилл. Скиньте деньги мне на карту, я сам их вложу с выгодой",
+        "model_quote": "Здравствуйте, я Кирилл. Скиньте деньги мне на карту, я сам их вложу с выгодой."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "no",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор не запросил идентификацию клиента и предложил неподобающую услугу.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "N/A"
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 0,
+     "system": 0,
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор предложил неподобающую услугу, которая не решает проблему клиента.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, я Кирилл. Скиньте деньги мне на карту, я сам их вложу с выгодой",
+        "model_quote": "Здравствуйте, я Кирилл. Скиньте деньги мне на карту, я сам их вложу с выгодой."
+       },
+       {
+        "n": 12,
+        "text": "Да, это я лично предлагаю, через компанию оформлять не надо",
+        "model_quote": "Да, это я лично предлагаю, через компанию оформлять не надо."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиент выразил недовольство, но оператор не отреагировал на проблему.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 11,
+        "text": "Вы серьёзно? Я про консультацию в приложении спрашивал",
+        "model_quote": "Вы серьёзно? Я про консультацию в приложении спрашивал."
+       },
+       {
+        "n": 12,
+        "text": "Да, это я лично предлагаю, через компанию оформлять не надо",
+        "model_quote": "Да, это я лично предлагаю, через компанию оформлять не надо."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 0,
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор предложил неподобающую услугу, что нарушает порядок ответов и делает диалог непонятным.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, я Кирилл. Скиньте деньги мне на карту, я сам их вложу с выгодой",
+        "model_quote": "Здравствуйте, я Кирилл. Скиньте деньги мне на карту, я сам их вложу с выгодой."
+       },
+       {
+        "n": 12,
+        "text": "Да, это я лично предлагаю, через компанию оформлять не надо",
+        "model_quote": "Да, это я лично предлагаю, через компанию оформлять не надо."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 3,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор закрыл чат без прощания и без предложения дальнейшей помощи.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор предложил перевести деньги лично, что является грубым нарушением.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, я Кирилл. Скиньте деньги мне на карту, я сам их вложу с выгодой",
+        "model_quote": "Здравствуйте, я Кирилл. Скиньте деньги мне на карту, я сам их вложу с выгодой."
+       },
+       {
+        "n": 12,
+        "text": "Да, это я лично предлагаю, через компанию оформлять не надо",
+        "model_quote": "Да, это я лично предлагаю, через компанию оформлять не надо."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "01:23 «Скиньте деньги мне на карту» — услуга в обход компании; чат закрыт оператором.",
+   "cached": false,
+   "cost": {
+    "calls": 1,
+    "tokens_in": 5472,
+    "tokens_out": 1021,
+    "usd": 0.0,
+    "rejected_calls": 0
+   },
+   "status_reason": null,
+   "expected_status": "completed",
+   "status_mismatch": false
+  },
+  {
+   "conversation_id": "p1-ru-029",
+   "status": "completed",
+   "language": "RU",
+   "channel": "agent chat",
+   "total": 46.0,
+   "gold_total": 76.92,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор поздоровался и представился в первой реплике, но использовал неформальный тон.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, я Алексей. Вы вообще читать умеете? Бот всё написал",
+        "model_quote": "Здравствуйте, я Алексей. Вы вообще читать умеете? Бот всё написал."
+       },
+       {
+        "n": 12,
+        "text": "Откройте tradernet.global, там вход в веб-версию",
+        "model_quote": "Откройте tradernet.global, там вход в веб-версию."
+       },
+       {
+        "n": 14,
+        "text": "До свидания",
+        "model_quote": "До свидания."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "no",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор не уточнил недостающую информацию, а просто повторил предыдущие инструкции бота.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, я Алексей. Вы вообще читать умеете? Бот всё написал",
+        "model_quote": "Здравствуйте, я Алексей. Вы вообще читать умеете? Бот всё написал."
+       },
+       {
+        "n": 12,
+        "text": "Откройте tradernet.global, там вход в веб-версию",
+        "model_quote": "Откройте tradernet.global, там вход в веб-версию."
+       },
+       {
+        "n": 14,
+        "text": "До свидания",
+        "model_quote": "До свидания."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "N/A"
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "yes",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор не запросил идентификацию клиента, но и не раскрыл конфиденциальную информацию.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "N/A"
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": 10,
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор дал ответ, но использовал неформальный тон и не уточнил недостающую информацию.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, я Алексей. Вы вообще читать умеете? Бот всё написал",
+        "model_quote": "Здравствуйте, я Алексей. Вы вообще читать умеете? Бот всё написал."
+       },
+       {
+        "n": 12,
+        "text": "Откройте tradernet.global, там вход в веб-версию",
+        "model_quote": "Откройте tradernet.global, там вход в веб-версию."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 13
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 2,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор не отреагировал на недовольство клиента и использовал неуважительный тон.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, я Алексей. Вы вообще читать умеете? Бот всё написал",
+        "model_quote": "Здравствуйте, я Алексей. Вы вообще читать умеете? Бот всё написал."
+       },
+       {
+        "n": 12,
+        "text": "Откройте tradernet.global, там вход в веб-версию",
+        "model_quote": "Откройте tradernet.global, там вход в веб-версию."
+       },
+       {
+        "n": 14,
+        "text": "До свидания",
+        "model_quote": "До свидания."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 4,
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор использовал неформальный и неуважительный тон, что затруднило понимание клиентом.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, я Алексей. Вы вообще читать умеете? Бот всё написал",
+        "model_quote": "Здравствуйте, я Алексей. Вы вообще читать умеете? Бот всё написал."
+       },
+       {
+        "n": 12,
+        "text": "Откройте tradernet.global, там вход в веб-версию",
+        "model_quote": "Откройте tradernet.global, там вход в веб-версию."
+       },
+       {
+        "n": 14,
+        "text": "До свидания",
+        "model_quote": "До свидания."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 2,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "no",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор попрощался, но не предложил дальнейшую помощь или подвёл итог.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 14,
+        "text": "До свидания",
+        "model_quote": "До свидания."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор использовал неуважительный тон, что является оскорблением.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, я Алексей. Вы вообще читать умеете? Бот всё написал",
+        "model_quote": "Здравствуйте, я Алексей. Вы вообще читать умеете? Бот всё написал."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "01:23 «Вы вообще читать умеете?» — оскорбление; жалоба клиента 02:54 проигнорирована.",
+   "cached": false,
+   "cost": {
+    "calls": 2,
+    "tokens_in": 10921,
+    "tokens_out": 2172,
+    "usd": 0.0,
+    "rejected_calls": 1
+   },
+   "status_reason": null,
+   "expected_status": "completed",
+   "status_mismatch": false
+  },
+  {
+   "conversation_id": "p1-kz-001",
+   "status": "completed",
+   "language": "KZ",
+   "channel": "agent chat",
+   "total": 100.0,
+   "gold_total": 100.0,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор поздоровался на языке клиента и представился в первой реплике.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Сәлеметсіз бе, менің атым Аружан",
+        "model_quote": "Сәлеметсіз бе, менің атым Аружан."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "yes",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор учёл известные детали и уточнил, как клиент может найти свой тариф.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Веб-нұсқада «Кабинет» бөлімін ашыңыз. Тариф аты-жөніңіздің астында жазылады",
+        "model_quote": "Веб-нұсқада «Кабинет» бөлімін ашыңыз. Тариф аты-жөніңіздің астында жазылады."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "N/A"
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиент спрашивал об актуальном тарифе, что не требует идентификации.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Запрос не требовал идентификации (например, общий вопрос о тарифах)."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": 20,
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор дал клиенту конкретный совет, как найти свой тариф, и клиент подтвердил, что нашёл.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Веб-нұсқада «Кабинет» бөлімін ашыңыз. Тариф аты-жөніңіздің астында жазылады",
+        "model_quote": "Веб-нұсқада «Кабинет» бөлімін ашыңыз. Тариф аты-жөніңіздің астында жазылады."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиент не выразил недовольства, оператор вёл себя вежливо.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 10,
+     "match": true,
+     "accepted": false,
+     "explanation": "Ответы оператора были ясные и связные, без заметных сбоев или пауз.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор подвёл итог и попрощался.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 12,
+        "text": "Оқасы жоқ. Сау болыңыз",
+        "model_quote": "Оқасы жоқ. Сау болыңыз!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Нарушений не найдено.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "",
+   "cached": false,
+   "cost": {
+    "calls": 2,
+    "tokens_in": 11365,
+    "tokens_out": 1674,
+    "usd": 0.0,
+    "rejected_calls": 1
+   },
+   "status_reason": null,
+   "expected_status": "completed",
+   "status_mismatch": false
+  },
+  {
+   "conversation_id": "p1-kz-008",
+   "status": "completed",
+   "language": "KZ",
+   "channel": "agent chat",
+   "total": 62.5,
+   "gold_total": 62.5,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "no",
+     "system": "yes",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор поздоровался на языке клиента и спросил, на каком сайте клиент находится.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Сәлем. Қай сайтқа кірдіңіз",
+        "model_quote": "Сәлем. Қай сайтқа кірдіңіз?"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор спросил, на каком сайте клиент находится, но не учёл известную информацию о том, что клиент находится на сайте Freedom Finance Global.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Сәлем. Қай сайтқа кірдіңіз",
+        "model_quote": "Сәлем. Қай сайтқа кірдіңіз?"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиент не просил доступ к конфиденциальной информации, поэтому идентификация не требовалась.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Запрос не требовал идентификации"
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": 10,
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор дал клиенту информацию о том, как войти в торговую платформу, но не уточнил, что клиент не смог войти в свой личный кабинет на сайте.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 12,
+        "text": "Ол ақпараттық сайт. Сауда шотына tradernet.global веб-нұсқасы немесе Freedom Broker қосымшасы арқылы кіресіз",
+        "model_quote": "Ол ақпараттық сайт. Сауда шотына tradernet.global веб-нұсқасы немесе Freedom Broker қосымшасы арқылы кіресіз."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 2,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиент не выразил недовольства или неудобства, оператор вёл себя вежливо.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 10,
+     "match": true,
+     "accepted": false,
+     "explanation": "Ответы оператора были ясными и связными, без заметных сбоев или противоречий.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор не подвёл итог или не предложил дальнейшую помощь, просто попрощался.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 13,
+        "text": "Ашылды, рақмет",
+        "model_quote": "Ашылды, рақмет."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 13
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "В диалоге не было грубых ошибок.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "01:24 «Сәлем. Қай сайтқа кірдіңіз?» — без имени, переспрос уже названного сайта; нет прощания.",
+   "cached": false,
+   "cost": {
+    "calls": 2,
+    "tokens_in": 11321,
+    "tokens_out": 1666,
+    "usd": 0.0,
+    "rejected_calls": 1
+   },
+   "status_reason": null,
+   "expected_status": "completed",
+   "status_mismatch": false
+  },
+  {
+   "conversation_id": "p1-kz-015",
+   "status": "completed",
+   "language": "KZ",
+   "channel": "agent chat",
+   "total": 65.0,
+   "gold_total": 64.71,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор поздоровался на языке клиента и представился в первой реплике.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Сәлеметсіз бе, мен Мұратпын",
+        "model_quote": "Сәлеметсіз бе, мен Мұратпын."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "yes",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор учёл известные детали и уточнил недостающее до ответа.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Сәлеметсіз бе, мен Мұратпын. Сіздің шотыңызда ақша шығаруға шектеу қойылғанын көріп тұрмын",
+        "model_quote": "Сәлеметсіз бе, мен Мұратпын. Сіздің шотыңызда ақша шығаруға шектеу қойылғанын көріп тұрмын."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "N/A"
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Запрос требовал идентификации, но её не было.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 10,
+     "system": 10,
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор не дал полного ответа на вопрос клиента и не объяснил причину.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 12,
+        "text": "Қазір растаудың қажеті жоқ",
+        "model_quote": "Қазір растаудың қажеті жоқ."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиент не выразил недовольства или неудобства.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 10,
+     "match": true,
+     "accepted": false,
+     "explanation": "Ответы ясные и связные, предупреждения об ожидании не требовались.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "no",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор не подвёл итог или не предложил дальнейшую помощь и не попрощался.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "yes",
+     "system": "no",
+     "match": false,
+     "accepted": false,
+     "explanation": "Нарушений не найдено.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "трактовка или пропущенная реплика"
+    }
+   ],
+   "uncertain": [],
+   "notes": "01:21 ограничение раскрыто без идентификации; 02:48 «растаудың қажеті жоқ».",
+   "cached": false,
+   "cost": {
+    "calls": 1,
+    "tokens_in": 5683,
+    "tokens_out": 752,
+    "usd": 0.0,
+    "rejected_calls": 0
+   },
+   "status_reason": null,
+   "expected_status": "completed",
+   "status_mismatch": false
+  },
+  {
+   "conversation_id": "p1-en-006",
+   "status": "completed",
+   "language": "EN",
+   "channel": "agent chat",
+   "total": 95.0,
+   "gold_total": 100.0,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор поздоровался и представился в первой реплике на языке клиента.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 11,
+        "text": "Hello, I'm Sam. I understand why you'd want to check. We'll need to verify your identity before we look at the account",
+        "model_quote": "Hello, I'm Sam. I understand why you'd want to check. We'll need to verify your identity before we look at the account."
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 26
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор учёл известные детали и уточнил валюту перевода.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 11,
+        "text": "Hello, I'm Sam. I understand why you'd want to check. We'll need to verify your identity before we look at the account",
+        "model_quote": "Hello, I'm Sam. I understand why you'd want to check. We'll need to verify your identity before we look at the account."
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 26
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Идентификация клиента подтверждена системой до раскрытия данных.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 13,
+        "text": "Customer identity verified",
+        "model_quote": "Customer identity verified."
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 26
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": 20,
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор дал клиенту информацию о том, что случай отправлен на проверку, и ответил на дополнительный вопрос о скачивании отчёта.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 16,
+        "text": "I've sent the case for review with the currency you provided. We'll follow up in this chat once there's an update",
+        "model_quote": "I've sent the case for review with the currency you provided. We'll follow up in this chat once there's an update."
+       },
+       {
+        "n": 28,
+        "text": "Yes, select the start and end dates for the period you need, then download the report",
+        "model_quote": "Yes, select the start and end dates for the period you need, then download the report."
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 26
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиент не выразил недовольства или неудобства, оператор вёл себя вежливо.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 11,
+       "to_n": 26
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 10,
+     "match": true,
+     "accepted": false,
+     "explanation": "Ответы оператора были ясные и связные, клиенту не пришлось переспрашивать.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 11,
+       "to_n": 26
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "no",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор не подвёл итог или не предложил дальнейшую помощь и не попрощался.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 29,
+        "text": "That worked. I'll wait here for the transfer update",
+        "model_quote": "That worked. I'll wait here for the transfer update."
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 26
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Нарушений не найдено.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 11,
+       "to_n": 26
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "Идентификация 03:13 до работы со счётом.",
+   "cached": false,
+   "cost": {
+    "calls": 2,
+    "tokens_in": 11799,
+    "tokens_out": 1710,
+    "usd": 0.0,
+    "rejected_calls": 1
+   },
+   "status_reason": null,
+   "expected_status": "completed",
+   "status_mismatch": false
+  },
+  {
+   "conversation_id": "p1-en-013",
+   "status": "failed",
+   "language": "EN",
+   "channel": "agent chat",
+   "total": null,
+   "gold_total": 92.31,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "no",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "yes",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    }
+   ],
+   "uncertain": [],
+   "notes": "04:36 платная частная консультация по личному номеру; чат закрыт оператором.",
+   "cached": false,
+   "cost": {
+    "calls": 3,
+    "tokens_in": 16180,
+    "tokens_out": 2497,
+    "usd": 0.0,
+    "rejected_calls": 3
+   },
+   "status_reason": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+   "expected_status": "completed",
+   "status_mismatch": true
+  },
+  {
+   "conversation_id": "p1-en-014",
+   "status": "completed",
+   "language": "EN",
+   "channel": "agent chat",
+   "total": 31.0,
+   "gold_total": 35.88,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор поздоровался и представился в первой реплике на языке клиента.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 11,
+        "text": "Hi, I'm Tyler. I can see a withdrawal restriction on your account",
+        "model_quote": "Hi, I'm Tyler. I can see a withdrawal restriction on your account."
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "no",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор не уточнил дополнительную информацию, так как клиент уже сообщил, что находится на экране вывода средств.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 11,
+        "text": "Hi, I'm Tyler. I can see a withdrawal restriction on your account",
+        "model_quote": "Hi, I'm Tyler. I can see a withdrawal restriction on your account."
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "N/A"
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор не запросил идентификацию клиента, хотя это было необходимо для проверки ограничений на вывод средств.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 11,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 10,
+     "system": 0,
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор не дал конкретного ответа на вопрос клиента и не предложил дальнейших действий.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 13,
+        "text": "We can skip that. I'll send it to the team to check the reason",
+        "model_quote": "We can skip that. I'll send it to the team to check the reason."
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 2,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "no",
+     "system": "yes",
+     "match": false,
+     "accepted": false,
+     "explanation": "Клиент не выразил недовольства или неудобства, оператор вёл себя вежливо.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 11,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 7,
+     "system": 4,
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор не дал ясного ответа на вопрос клиента и не предложил дальнейших действий.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 13,
+        "text": "We can skip that. I'll send it to the team to check the reason",
+        "model_quote": "We can skip that. I'll send it to the team to check the reason."
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 1,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор попрощался, но не дал итога или дальнейших действий.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 15,
+        "text": "Goodbye",
+        "model_quote": "Goodbye."
+       }
+      ],
+      "range": {
+       "from_n": 11,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "yes",
+     "system": "no",
+     "match": false,
+     "accepted": false,
+     "explanation": "Нарушений, описанных в критерии, не найдено.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 11,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "трактовка или пропущенная реплика"
+    }
+   ],
+   "uncertain": [],
+   "notes": "02:54 ограничение раскрыто без идентификации; 03:52 «We can skip that»; вопрос 04:04 проигнорирован, только «Goodbye.»",
+   "cached": false,
+   "cost": {
+    "calls": 1,
+    "tokens_in": 5291,
+    "tokens_out": 782,
+    "usd": 0.0,
+    "rejected_calls": 0
+   },
+   "status_reason": null,
+   "expected_status": "completed",
+   "status_mismatch": false
+  },
+  {
+   "conversation_id": "p4-ru-002",
+   "status": "completed",
+   "language": "RU",
+   "channel": "voice call",
+   "total": 100.0,
+   "gold_total": 82.35,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "no",
+     "system": "yes",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор представился и поздоровался на языке клиента в первой реплике.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 3,
+        "text": "Да компания федеброкер меня зовут [Имя скрыто], [Имя скрыто], мы с вами ранее разговаривали",
+        "model_quote": "Да компания федеброкер меня зовут [Имя скрыто], [Имя скрыто], мы с вами ранее разговаривали."
+       },
+       {
+        "n": 15,
+        "text": "Да, всё верно. Спасибо за информацию. Сейчас прошу вас ожидать на линии",
+        "model_quote": "Да, всё верно. Спасибо за информацию. Сейчас прошу вас ожидать на линии."
+       }
+      ],
+      "range": {
+       "from_n": 1,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "yes",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор уточнил недостающие персональные данные клиента.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 12,
+        "text": "Она да проверили тоже отказ, тогда подскажете, пожалуйста, ещё раз ваш ин полное имя и адрес. Я вас сейчас попробую соединить с трейдером",
+        "model_quote": "Она да проверили тоже отказ, тогда подскажете, пожалуйста, ещё раз ваш ин полное имя и адрес. Я вас сейчас попробую соединить с трейдером."
+       },
+       {
+        "n": 13,
+        "text": "[Персональные данные скрыты]",
+        "model_quote": "[Персональные данные скрыты]"
+       },
+       {
+        "n": 14,
+        "text": "[Персональные данные скрыты]",
+        "model_quote": "[Персональные данные скрыты]"
+       }
+      ],
+      "range": {
+       "from_n": 1,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "N/A"
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор подтвердил идентификацию клиента перед соединением с трейдером.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 15,
+        "text": "Да, всё верно. Спасибо за информацию. Сейчас прошу вас ожидать на линии",
+        "model_quote": "Да, всё верно. Спасибо за информацию. Сейчас прошу вас ожидать на линии."
+       }
+      ],
+      "range": {
+       "from_n": 1,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 15,
+     "system": 20,
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор дал клиенту информацию о том, что покупка ценной бумаги возможна только через трейдера и объяснил, почему приложение показывает возможность покупки, хотя это невозможно.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 6,
+        "text": "Да можете сейчас попробовать выставить лимит на приказ по данной ценной бумаге",
+        "model_quote": "Да можете сейчас попробовать выставить лимит на приказ по данной ценной бумаге."
+       },
+       {
+        "n": 44,
+        "text": "Можете сразу клиенту озвучить, просто имею ввиду",
+        "model_quote": "Можете сразу клиенту озвучить, просто имею ввиду."
+       },
+       {
+        "n": 64,
+        "text": "Да, сейчас уточнили, вот трейдеров мы сейчас проверили по ценной бумаги. К сожалению, его на бирже нельзя купить его можно купить только по уйти всей сделки",
+        "model_quote": "Да, сейчас уточнили, вот трейдеров мы сейчас проверили по ценной бумаги. К сожалению, его на бирже нельзя купить его можно купить только по уйти всей сделки."
+       },
+       {
+        "n": 66,
+        "text": "Да, оно может предложение отображаться, потому что есть также другие юрисдикции, которые у которых есть доступ к покупке, и оно может в таком формате стакан отображаться",
+        "model_quote": "Да, оно может предложение отображаться, потому что есть также другие юрисдикции, которые у которых есть доступ к покупке, и оно может в таком формате стакан отображаться."
+       },
+       {
+        "n": 67,
+        "text": "Но у нас, к сожалению, только путь все сделки его можно приобрести или продать",
+        "model_quote": "Но у нас, к сожалению, только путь все сделки его можно приобрести или продать."
+       },
+       {
+        "n": 69,
+        "text": "Да",
+        "model_quote": "Да."
+       }
+      ],
+      "range": {
+       "from_n": 1,
+       "to_n": 73
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 1,
+     "cause": "бот/удержание"
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиент спросил, как быстро оператор справится, и оператор спросил, на связи ли клиент.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 62,
+        "text": "Скажите вы на линии",
+        "model_quote": "Скажите вы на линии?"
+       }
+      ],
+      "range": {
+       "from_n": 1,
+       "to_n": 73
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 10,
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор предупредил клиента о том, что он будет на удержании.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 18,
+        "text": "Клиент находится на удержании",
+        "model_quote": "Клиент находится на удержании."
+       },
+       {
+        "n": 20,
+        "text": "Алло Добрый день",
+        "model_quote": "Алло Добрый день."
+       },
+       {
+        "n": 15,
+        "text": "Да, всё верно. Спасибо за информацию. Сейчас прошу вас ожидать на линии",
+        "model_quote": "Да, всё верно. Спасибо за информацию. Сейчас прошу вас ожидать на линии."
+       }
+      ],
+      "range": {
+       "from_n": 1,
+       "to_n": 73
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор подвёл итог и попрощался с клиентом.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 71,
+        "text": "Благодарю вас за уделенное время всего хорошего до свидания",
+        "model_quote": "Благодарю вас за уделенное время всего хорошего до свидания."
+       }
+      ],
+      "range": {
+       "from_n": 1,
+       "to_n": 73
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "В диалоге нет грубых ошибок.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 1,
+       "to_n": 73
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "Повторный звонок без приветствия. Удержание ~7 мин предупреждено. Реплики трейдера на удержании помечены как operator — не оценивать. Комиссию OTC клиенту не озвучил.",
+   "cached": false,
+   "cost": {
+    "calls": 1,
+    "tokens_in": 7800,
+    "tokens_out": 1242,
+    "usd": 0.0,
+    "rejected_calls": 0
+   },
+   "status_reason": null,
+   "expected_status": "completed",
+   "status_mismatch": false
+  },
+  {
+   "conversation_id": "p4-ru-003",
+   "status": "completed",
+   "language": "RU",
+   "channel": "voice call",
+   "total": 91.0,
+   "gold_total": 79.47,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор поздоровался на языке клиента и представился в первой реплике.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 13,
+        "text": "Здравствуйте, Фридом брокер меня зовут [Имя скрыто], чем могу помочь",
+        "model_quote": "Здравствуйте, Фридом брокер меня зовут [Имя скрыто], чем могу помочь?"
+       }
+      ],
+      "range": {
+       "from_n": 13,
+       "to_n": 25
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "no",
+     "system": "yes",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор уточнил детали, которые клиент не предоставил, и не переспросил уже сказанное.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 19,
+        "text": "Так, а подскажите, пожалуйста",
+        "model_quote": "Так, а подскажите, пожалуйста."
+       },
+       {
+        "n": 20,
+        "text": "Приемку вам обращаться",
+        "model_quote": "Приемку вам обращаться?"
+       }
+      ],
+      "range": {
+       "from_n": 13,
+       "to_n": 65
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор провёл идентификацию клиента перед раскрытием данных.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 65,
+        "text": "Так да, идентификацию успешно проеданная [Имя скрыто]",
+        "model_quote": "Так да, идентификацию успешно проеданная [Имя скрыто]."
+       }
+      ],
+      "range": {
+       "from_n": 13,
+       "to_n": 65
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": 20,
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор сообщил клиенту, что поручение принято, но находится в обработке, и предложил связаться с техническим отделом для получения обратной связи.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 66,
+        "text": "Лежу, на данный момент там вот имеется поручение и поручение принято",
+        "model_quote": "Лежу, на данный момент там вот имеется поручение и поручение принято."
+       },
+       {
+        "n": 68,
+        "text": "Но данное поручение все еще находится в обработке",
+        "model_quote": "Но данное поручение все еще находится в обработке."
+       },
+       {
+        "n": 71,
+        "text": "Давайте щас я сейчас направлю технический отдел техно о том, чтобы провели вашу брокерский счёт. Данное поручение, как только они ответят, я предоставлю вам обратную связь. Позвоню вам",
+        "model_quote": "Давайте щас я сейчас направлю технический отдел техно о том, чтобы провели вашу брокерский счёт. Данное поручение, как только они ответят, я предоставлю вам обратную связь. Позвоню вам."
+       }
+      ],
+      "range": {
+       "from_n": 13,
+       "to_n": 71
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор ответил на замечание клиента о длительной обработке поручения.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 68,
+        "text": "Но данное поручение все еще находится в обработке",
+        "model_quote": "Но данное поручение все еще находится в обработке."
+       }
+      ],
+      "range": {
+       "from_n": 13,
+       "to_n": 71
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 7,
+     "system": 4,
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор задал неясный вопрос, что привело к переспросу клиента.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 38,
+        "text": "Как",
+        "model_quote": "Как?"
+       }
+      ],
+      "range": {
+       "from_n": 13,
+       "to_n": 78
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 1,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "na",
+     "system": "yes",
+     "match": false,
+     "accepted": false,
+     "explanation": "Оператор подвёл итог и попрощался с клиентом.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 76,
+        "text": "Ответа от профильного, отдела я предоставлю вам обратно здесь до 00:00",
+        "model_quote": "Ответа от профильного, отдела я предоставлю вам обратно здесь до 00:00."
+       },
+       {
+        "n": 77,
+        "text": "Всё спасибо, спасибо",
+        "model_quote": "Всё спасибо, спасибо."
+       }
+      ],
+      "range": {
+       "from_n": 13,
+       "to_n": 78
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "N/A"
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Нарушений, описанных в критерии, не найдено.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 13,
+       "to_n": 78
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "Звонок. Сначала ответ не по теме (изменение сведений), клиент поправил; идентификация по SMS 15:54:43 до раскрытия статуса поручения.",
+   "cached": false,
+   "cost": {
+    "calls": 2,
+    "tokens_in": 15467,
+    "tokens_out": 2227,
+    "usd": 0.0,
+    "rejected_calls": 1
+   },
+   "status_reason": null,
+   "expected_status": "completed",
+   "status_mismatch": false
+  }
+ ],
+ "edge": []
+}

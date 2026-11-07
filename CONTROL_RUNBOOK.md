@@ -84,7 +84,7 @@ time (until curl -s localhost:8000/api/batches/$BID | grep -q '"status": *"compl
    `VOTES=1`. Точность не измерена (ключа не было).
 2. Локальная Ollama (`ollama/README.md`): `LLM_PROVIDER=openai  LLM_BASE_URL=http://localhost:11434/v1
    LLM_MODEL=cqa-qwen14b  LLM_API_KEY=ollama  LLM_CONCURRENCY=1  LLM_TIMEOUT_S=900  EVAL_MODE=per_dialog  VOTES=1`;
-   пакет с `concurrency: 1`. __LOCAL_RUNBOOK__
+   пакет с `concurrency: 1`. Измерено: ≈ 181 с на диалог → 10 диалогов ≈ 30 мин, $0; точность ≈ 70 % по критериям против 97 % у Opus (`docs/STATUS.md` §4а).
 3. Затем новый пакет: `POST /api/batches {"group_id":"<GROUP_ID>","only_not_evaluated":true,"concurrency":1}` —
    оценит только то, что не успела облачная модель (версия чек-листа та же).
 

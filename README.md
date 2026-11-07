@@ -67,9 +67,9 @@ curl 'localhost:8000/api/results?group_id=DEV&format=csv'
 |---|---|---|---|---|
 | Облачная платная: Anthropic claude-opus-5-5, per_criterion, VOTES=3 | `LLM_PROVIDER=anthropic` | tune 425/440 = 96.6 %, edge 87/88 | ≈ 12 с при 4 параллельных (≈ 35 с на диалог при 3 голосах) | ≈ $0.10 за голос на диалог |
 | Бесплатная облачная: Gemini / Groq / OpenRouter (OpenAI-совместимый адрес) | `LLM_PROVIDER=openai`, адрес и ключ — см. `.env.example`, `RATE_LIMIT_RPM` под тариф | **не измерено — нет ключа** (в проекте нет аккаунта ни одного из сервисов) | — | $0 в пределах лимитов |
-| Локальная: Ollama, qwen2.5:14b (контекст 16k), M1 Pro 32 ГБ | `ollama/README.md`; `EVAL_MODE=per_dialog`, `LLM_CONCURRENCY=1` | __LOCAL_ACC__ | __LOCAL_TIME__ | $0 |
+| Локальная: Ollama, qwen2.5:14b (контекст 16k), M1 Pro 32 ГБ | `ollama/README.md`; `EVAL_MODE=per_dialog`, `LLM_CONCURRENCY=1` | tune (15 дл.) 77/120 = 64.2%, edge 63/88 = 71.6% (Opus на тех же: 93.3% и 98.9%) | ≈ 181 с (последовательно) | $0 |
 
-__LOCAL_NOTE__
+Локальная модель слабее на 25 п.п.: систематически теряет N/A по c02 и занижает c04/c06; подходит как запасной вариант без облака (10 диалогов ≈ 30 мин). Подробности и предложение конфигурации контрольного прогона — `docs/STATUS.md` §4а.
 
 ## Точность на эталоне
 
