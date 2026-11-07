@@ -1,0 +1,10 @@
+/* Цвета, шрифты, радиусы — менять стиль всего сайта здесь */
+:root{
+  --card:#F2F5FA; --line:#E6EBF2; --text:#16191D; --muted:#7B8594;
+  --blue:#7B8CF5; --green:#1FD17A; --green-d:#16A35A; --amber:#E89B12; --red:#E5484D;
+  --grad:linear-gradient(90deg,var(--blue),var(--green));
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --head:Manrope,Inter,system-ui,sans-serif;
+  --body:Inter,system-ui,sans-serif;
+  --r-lg:24px; --r-md:16px; --r-sm:12px;
+}

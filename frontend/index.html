@@ -1,18 +1,43 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CQA</title>
-<style>
-  body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 48rem; color: #222; }
-  code { background: #f3f3f3; padding: .1rem .3rem; border-radius: .2rem; }
-</style>
+<title>CQA — оценка качества диалогов</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/components.css">
 </head>
 <body>
-<h1>CQA — оценка качества диалогов</h1>
-<p>Интерфейс в разработке. REST API работает: <a href="/docs">/docs</a> (OpenAPI), <a href="/api/health">/api/health</a>,
-<a href="/api/meta">/api/meta</a>.</p>
-<p>Параметры страницы передаются через URL, например <code>/ui/?conversation_id=p1-ru-001&amp;n=12</code>.</p>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#7B8CF5"/><stop offset="1" stop-color="#1FD17A"/></linearGradient>
+  <linearGradient id="sh" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#B3BCFF"/><stop offset=".55" stop-color="#5A6EE8"/><stop offset="1" stop-color="#3C4FC4"/></linearGradient>
+</defs></svg>
+
+<nav><div class="wrap">
+  <a class="logo" href="#dialogs">
+    <svg width="22" height="26" viewBox="0 0 24 28"><path d="M12 1 2 5v8c0 7 4.5 11.5 10 14 5.5-2.5 10-7 10-14V5L12 1z" fill="url(#g)"/><path d="m7.5 14 3 3 6-6.5" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>CQA
+  </a>
+  <div class="links"><a href="#dialogs">Диалоги</a><a href="#checklist">Чек-лист</a><a href="#appeals">Апелляции</a><a href="#analytics">Аналитика</a></div>
+  <span class="mock" id="mockBadge" hidden title="Данные из js/mock.js. Переключить: js/config.js → USE_MOCK = false">Тестовые данные</span>
+  <div class="lang"><button class="on">RU</button><button>KZ</button><button>EN</button></div>
+</div></nav>
+
+<div id="app"></div>
+
+<!-- порядок важен -->
+<script src="js/config.js"></script>
+<script src="js/scoring.js"></script>
+<script src="js/mock.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/pages/dialogs.js"></script>
+<script src="js/pages/dialog.js"></script>
+<script src="js/pages/checklist.js"></script>
+<script src="js/pages/appeals.js"></script>
+<script src="js/pages/analytics.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
