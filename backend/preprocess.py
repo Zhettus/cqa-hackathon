@@ -16,12 +16,15 @@ from pydantic import BaseModel, Field
 
 # --- флаги реплик --------------------------------------------------------------
 DUPLICATE = "duplicate"                    # точный дубль предыдущей реплики (ts+speaker+text)
-IVR = "ivr"                                # звонок: до подключения оператора
+IVR = "ivr"                                # звонок: реплики клиента/бота до подключения оператора
 CLIENT_NOT_HEARING = "client_not_hearing"  # удержание или консультация с агентом
 AFTER_END = "after_end"                    # после «Клиент завершил разговор»
 DTMF = "dtmf"                              # тоновый набор клиента в звонке
 
-NOT_COUNTED_FLAGS = {DUPLICATE, IVR, CLIENT_NOT_HEARING, AFTER_END}
+# R1: засчитываются все реплики speaker=operator, кроме удержания/консультации, реплик после завершения
+# разговора и точных дублей. Положение относительно события эскалации на зачёт не влияет —
+# эскалация лишь точка отсчёта первой реакции.
+NOT_COUNTED_FLAGS = {DUPLICATE, CLIENT_NOT_HEARING, AFTER_END}
 
 Segment = Literal["pre_operator", "ivr", "operator", "hold", "consultation", "after_end"]
 Lang = Literal["RU", "KZ", "EN"]
@@ -281,7 +284,7 @@ def preprocess(record: dict, settings: dict | None = None) -> Preprocessed:
         flags = []
         if dup[i]:
             flags.append(DUPLICATE)
-        if is_call and op_start is not None and i < op_start and m["speaker"] != "system":
+        if is_call and op_start is not None and i < op_start and m["speaker"] in ("client", "bot"):
             flags.append(IVR)
         if m["speaker"] != "client" and m["speaker"] != "system" and (inside(i, holds) or inside(i, consults)):
             flags.append(CLIENT_NOT_HEARING)
@@ -296,6 +299,8 @@ def preprocess(record: dict, settings: dict | None = None) -> Preprocessed:
             seg = "consultation"
         elif inside(i, holds):
             seg = "hold"
+        elif m["speaker"] == "operator":
+            seg = "operator"
         elif op_start is None or i < op_start or (i == op_start and m["speaker"] == "system"):
             seg = "ivr" if is_call and m["speaker"] != "system" else "pre_operator"
         else:
@@ -335,9 +340,12 @@ def preprocess(record: dict, settings: dict | None = None) -> Preprocessed:
                         significant=eff > pause_threshold))
 
     first_response = None
-    if first_op is not None and start_ev is not None and start_ev < first_op.idx - 1:
-        first_response = _round(t[first_op.idx - 1] - t[start_ev])
-        add_gap("first_response", start_ev, first_op.idx - 1, warned=False)
+    if first_op is not None and start_ev is not None:
+        if start_ev < first_op.idx - 1:
+            first_response = _round(t[first_op.idx - 1] - t[start_ev])
+            add_gap("first_response", start_ev, first_op.idx - 1, warned=False)
+        else:                                   # оператор ответил раньше события эскалации — ожидания не было
+            first_response = 0.0
 
     if first_op is not None:
         pending: int | None = None

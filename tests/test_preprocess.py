@@ -172,6 +172,38 @@ def test_only_operator_counts(dev_records, edge_records):
         for m in preprocess(r).messages:
             if m.counts_for_operator:
                 assert m.speaker == "operator" and m.segment == "operator"
+                assert not ({DUPLICATE, CLIENT_NOT_HEARING, AFTER_END} & set(m.flags))
+            elif m.speaker == "operator":
+                assert {DUPLICATE, CLIENT_NOT_HEARING, AFTER_END} & set(m.flags), m
+
+
+def test_operator_before_escalation_counts(dev_records):
+    """R1 (B6): реплика оператора до события эскалации засчитывается; эскалация — лишь точка отсчёта."""
+    rec = {"conversation_id": "t", "channel": "agent chat", "language": "RU", "transcript": [
+        {"timestamp": "00:00", "speaker": "client", "text": "Привет"},
+        {"timestamp": "00:05", "speaker": "operator", "text": "Здравствуйте, меня зовут Х"},
+        {"timestamp": "00:10", "speaker": "system", "text": "Эскалация на оператора"},
+        {"timestamp": "00:20", "speaker": "operator", "text": "Чем помочь?"}]}
+    p = preprocess(rec, SETTINGS)
+    assert [m.counts_for_operator for m in p.messages] == [False, True, False, True]
+    assert p.messages[1].segment == "operator" and p.messages[0].segment == "pre_operator"
+    assert p.facts.operator_messages == 2 and p.facts.first_operator_idx == 2
+    assert p.facts.escalation_idx == 3 and p.facts.first_response_s == 0.0 and p.facts.gaps == []
+    # обычный порядок: первая реакция считается от эскалации
+    rec["transcript"][1], rec["transcript"][2] = rec["transcript"][2], rec["transcript"][1]
+    rec["transcript"][1]["timestamp"], rec["transcript"][2]["timestamp"] = "00:05", "00:10"
+    f = preprocess(rec, SETTINGS).facts
+    assert f.first_response_s == 5.0 and f.escalation_idx == 2 and f.first_operator_idx == 3
+    # звонок: оператор, говоривший только на удержании, не засчитывается → not_evaluable
+    call = {"conversation_id": "h", "channel": "voice call", "language": "RU", "transcript": [
+        {"timestamp": "2026-11-05T10:00:00+00:00", "speaker": "system", "text": "Агент присоединился к разговору с клиентом."},
+        {"timestamp": "2026-11-05T10:00:01+00:00", "speaker": "system", "text": "Клиент находится на удержании."},
+        {"timestamp": "2026-11-05T10:00:05+00:00", "speaker": "operator", "text": "Коллега, подскажи"},
+        {"timestamp": "2026-11-05T10:00:30+00:00", "speaker": "system", "text": "Клиент завершил разговор."}]}
+    assert preprocess(call, SETTINGS).facts.operator_messages == 0
+    # IVR в звонке помечается только у клиента/бота
+    p = preprocess(dev_records["p4-ru-001"], SETTINGS)
+    assert all(m.speaker in ("client", "bot") for m in p.messages if IVR in m.flags)
 
 
 def test_source_fields_untouched(dev_records):
