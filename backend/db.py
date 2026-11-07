@@ -123,6 +123,17 @@ CREATE TABLE IF NOT EXISTS appeal_decisions (
     decided_at      TEXT NOT NULL
 );
 
+-- Журнал апелляции (append-only): opened → in_review → decided. Статус выводится из журнала и решения.
+CREATE TABLE IF NOT EXISTS appeal_events (
+    id         TEXT PRIMARY KEY,
+    appeal_id  TEXT NOT NULL REFERENCES appeals(id),
+    event      TEXT NOT NULL CHECK (event IN ('opened','in_review','decided')),
+    actor      TEXT,
+    note       TEXT,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_appeal_events ON appeal_events(appeal_id);
+
 -- Пакетная оценка: изменяемые таблицы прогресса (сами оценки — в evaluations, неизменяемы).
 CREATE TABLE IF NOT EXISTS batches (
     id                TEXT PRIMARY KEY,
@@ -147,7 +158,8 @@ CREATE TABLE IF NOT EXISTS batch_items (
 );
 """
 
-IMMUTABLE_TABLES = ["checklists", "evaluations", "criterion_results", "llm_calls", "appeals", "appeal_decisions"]
+IMMUTABLE_TABLES = ["checklists", "evaluations", "criterion_results", "llm_calls", "appeals", "appeal_decisions",
+                    "appeal_events"]
 
 
 def _triggers() -> str:
@@ -452,12 +464,33 @@ def insert_appeal(conn: sqlite3.Connection, evaluation_id: str, criterion_id: st
     with conn:
         conn.execute("INSERT INTO appeals(id, evaluation_id, criterion_id, comment, author, created_at) "
                      "VALUES (?,?,?,?,?,?)", (aid, evaluation_id, criterion_id, comment.strip(), author, now()))
+        _appeal_event(conn, aid, "opened", actor=author)
     return get_appeal(conn, aid)
+
+
+def _appeal_event(conn: sqlite3.Connection, appeal_id: str, event: str, *, actor: str | None = None,
+                  note: str | None = None) -> None:
+    conn.execute("INSERT INTO appeal_events(id, appeal_id, event, actor, note, created_at) VALUES (?,?,?,?,?,?)",
+                 (new_id("ae"), appeal_id, event, actor, note, now()))
+
+
+def start_review(conn: sqlite3.Connection, appeal_id: str, reviewer: str | None = None) -> dict:
+    """open → in_review: проверяющий взял апелляцию в работу."""
+    appeal = get_appeal(conn, appeal_id)
+    if appeal["decision"] is not None:
+        raise Conflict(f"по апелляции {appeal_id} решение уже принято")
+    if appeal["status"] == "in_review":
+        raise Conflict(f"апелляция {appeal_id} уже на рассмотрении")
+    with conn:
+        _appeal_event(conn, appeal_id, "in_review", actor=reviewer)
+    return get_appeal(conn, appeal_id)
 
 
 def insert_decision(conn: sqlite3.Connection, appeal_id: str, decision: str, *, new_answer: Any = None,
                     reason: str | None = None, reviewer: str | None = None) -> dict:
-    """Решение по апелляции. Проверка new_answer по критерию — в вызывающем коде (scoring.validate_answer)."""
+    """Решение по апелляции: confirm (подтвердить) или change (изменить — обязательны new_answer и reason).
+    Проверка new_answer по критерию — в вызывающем коде (scoring.validate_answer). Решение из статуса open
+    допускается: событие in_review записывается автоматически, журнал остаётся полным."""
     appeal = get_appeal(conn, appeal_id)
     if appeal["decision"] is not None:
         raise Conflict(f"по апелляции {appeal_id} решение уже принято")
@@ -466,10 +499,14 @@ def insert_decision(conn: sqlite3.Connection, appeal_id: str, decision: str, *, 
     if decision == "change" and (new_answer is None or not (reason and reason.strip())):
         raise ValidationFailed([{"path": "new_answer/reason", "message": "для change нужны новый ответ и причина"}])
     with conn:
+        if appeal["status"] == "open":
+            _appeal_event(conn, appeal_id, "in_review", actor=reviewer, note="автоматически при решении")
         conn.execute("INSERT INTO appeal_decisions(id, appeal_id, decision, new_answer_json, reason, reviewer, "
                      "decided_at) VALUES (?,?,?,?,?,?,?)",
                      (new_id("dc"), appeal_id, decision, None if decision == "confirm" else _j(new_answer),
                       reason, reviewer, now()))
+        _appeal_event(conn, appeal_id, "decided", actor=reviewer,
+                      note=decision if decision == "confirm" else f"change → {_j(new_answer)}: {reason}")
     return get_appeal(conn, appeal_id)
 
 
@@ -496,13 +533,31 @@ def _appeal(conn: sqlite3.Connection, row: sqlite3.Row) -> dict:
                       (d["evaluation_id"], d["criterion_id"])).fetchone()
     d["original"] = {"answer": json.loads(cr["answer_json"]), "points": cr["points"]} if cr else None
     dec = conn.execute("SELECT * FROM appeal_decisions WHERE appeal_id = ?", (d["id"],)).fetchone()
-    d["status"] = "decided" if dec else "open"
+    d["events"] = [dict(e) for e in conn.execute(
+        "SELECT event, actor, note, created_at FROM appeal_events WHERE appeal_id = ? ORDER BY created_at, rowid",
+        (d["id"],))]
+    if dec:
+        d["status"] = "confirmed" if dec["decision"] == "confirm" else "changed"
+    elif any(e["event"] == "in_review" for e in d["events"]):
+        d["status"] = "in_review"
+    else:
+        d["status"] = "open"
     d["decision"] = None if not dec else {
         "decision": dec["decision"],
         "new_answer": None if dec["new_answer_json"] is None else json.loads(dec["new_answer_json"]),
         "reason": dec["reason"], "reviewer": dec["reviewer"], "decided_at": dec["decided_at"],
     }
     return d
+
+
+def change_decisions(conn: sqlite3.Connection) -> dict[str, dict[str, Any]]:
+    """{evaluation_id: {criterion_id: new_answer}} по решениям «change», в порядке принятия (последнее побеждает)."""
+    out: dict[str, dict[str, Any]] = {}
+    for r in conn.execute("SELECT a.evaluation_id, a.criterion_id, d.new_answer_json FROM appeal_decisions d "
+                          "JOIN appeals a ON a.id = d.appeal_id WHERE d.decision = 'change' "
+                          "ORDER BY d.decided_at, d.rowid"):
+        out.setdefault(r[0], {})[r[1]] = json.loads(r[2])
+    return out
 
 
 def query_appeals(conn: sqlite3.Connection, *, status: str | None = None, evaluation_id: str | None = None,
@@ -516,12 +571,24 @@ def query_appeals(conn: sqlite3.Connection, *, status: str | None = None, evalua
         sql += " AND e.conversation_id = ?"; args.append(conversation_id)
     if criterion_id:
         sql += " AND a.criterion_id = ?"; args.append(criterion_id)
+    in_review = "EXISTS (SELECT 1 FROM appeal_events x WHERE x.appeal_id = a.id AND x.event = 'in_review')"
     if status == "open":
+        sql += f" AND d.id IS NULL AND NOT {in_review}"
+    elif status == "in_review":
+        sql += f" AND d.id IS NULL AND {in_review}"
+    elif status == "active":                      # open + in_review
         sql += " AND d.id IS NULL"
-    elif status == "decided":
+    elif status == "confirmed":
+        sql += " AND d.decision = 'confirm'"
+    elif status == "changed":
+        sql += " AND d.decision = 'change'"
+    elif status == "decided":                     # confirmed + changed
         sql += " AND d.id IS NOT NULL"
     sql += " ORDER BY a.created_at, a.rowid"
     return [_appeal(conn, r) for r in conn.execute(sql, args).fetchall()]
+
+
+APPEAL_STATUSES = ("open", "in_review", "active", "confirmed", "changed", "decided")
 
 
 # --- списки и сводки для REST API ----------------------------------------------------------

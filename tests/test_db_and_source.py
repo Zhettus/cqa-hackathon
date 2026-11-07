@@ -79,7 +79,7 @@ def test_evaluation_appeal_flow(conn, dev_records):
     with pytest.raises(db.ValidationFailed):
         db.insert_decision(conn, ap["id"], "change", new_answer=15)          # без причины
     dec = db.insert_decision(conn, ap["id"], "change", new_answer=15, reason="деталь", reviewer="qa")
-    assert dec["status"] == "decided" and dec["decision"]["new_answer"] == 15
+    assert dec["status"] == "changed" and dec["decision"]["new_answer"] == 15
     with pytest.raises(db.Conflict):
         db.insert_decision(conn, ap["id"], "confirm")
     assert db.get_evaluation(conn, eid)["total"] == 100.0                  # исходная оценка неизменна

@@ -21,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from backend import data_source, db
+from backend.appeals import apply_final_totals, final_result
 from backend.checklist import validate_checklist
 from backend.config import ROOT, get_settings
 from backend.evaluator import Evaluator
@@ -78,6 +79,10 @@ class DecisionRequest(BaseModel):
     decision: Literal["confirm", "change"]
     new_answer: Any = None
     reason: str | None = None
+    reviewer: str | None = None
+
+
+class ReviewRequest(BaseModel):
     reviewer: str | None = None
 
 
@@ -234,6 +239,7 @@ async def list_conversations(request: Request, group_id: str | None = None, chan
     if appeal is not None and appeal not in ("open", "decided", "none"):
         raise ApiError(400, "bad_request", "appeal: open | decided | none")
     latest = db.latest_evaluations(conn)
+    apply_final_totals(conn, latest.values())
     decided = {r[0] for r in conn.execute("SELECT DISTINCT a.evaluation_id FROM appeals a JOIN appeal_decisions d "
                                           "ON d.appeal_id = a.id")}
     items = []
@@ -242,6 +248,7 @@ async def list_conversations(request: Request, group_id: str | None = None, chan
         st = ev["status"] if ev else "not_evaluated"
         if status and st != status:
             continue
+        # open — есть нерешённые апелляции (open или in_review); decided — все решены
         ap = "none" if not ev else ("open" if ev["open_appeals"] else ("decided" if ev["id"] in decided else "none"))
         if appeal and ap != appeal:
             continue
@@ -353,25 +360,27 @@ async def diff_versions(checklist_id: str, a: int, b: int, conn: sqlite3.Connect
 
 
 # --- 4. оценка -------------------------------------------------------------------------------
-def _with_titles(conn: sqlite3.Connection, ev: dict) -> dict:
-    """Объект оценки по контракту: title критерия из версии чек-листа, final_total, open_appeals."""
+def _with_titles(conn: sqlite3.Connection, ev: dict) -> tuple[dict, list[dict], dict | None]:
+    """Объект оценки по контракту (title критерия, final_total, open_appeals) + апелляции + final."""
     try:
         cl = db.get_checklist(conn, ev["checklist"]["id"], ev["checklist"]["version"])
         titles = {c["id"]: c.get("title", "") for c in cl["criteria"]}
     except db.NotFound:
-        titles = {}
+        cl, titles = None, {}
     for c in ev.get("criteria", []):
         c.setdefault("title", titles.get(c["criterion_id"], ""))
-    ev["final_total"] = ev.get("total")
-    ev["open_appeals"] = sum(1 for a in db.list_appeals(conn, ev["id"]) if a["status"] == "open")
-    return ev
+    appeals = db.list_appeals(conn, ev["id"])
+    final = final_result(conn, ev, appeals, cl) if cl else None
+    ev["final_total"] = final["total"] if final else ev.get("total")
+    ev["open_appeals"] = sum(1 for a in appeals if a["status"] in ("open", "in_review"))
+    return ev, appeals, final
 
 
 @router.post("/api/evaluations", status_code=201)
 async def create_evaluation(body: EvaluateRequest, request: Request, conn: sqlite3.Connection = Conn):
     evaluator = Evaluator(conn, request.app.state.provider_factory())
     ev = await evaluator.evaluate(body.conversation_id, body.checklist_id, body.checklist_version)
-    return _with_titles(conn, ev)
+    return _with_titles(conn, ev)[0]
 
 
 @router.get("/api/evaluations")
@@ -382,14 +391,15 @@ async def list_evaluations(conversation_id: str | None = None, batch_id: str | N
     items, total = db.query_evaluations(conn, conversation_id=conversation_id, batch_id=batch_id,
                                         checklist_id=checklist_id, checklist_version=checklist_version,
                                         status=status, limit=limit, offset=offset)
+    apply_final_totals(conn, items)
     return {"items": items, "total": total}
 
 
 @router.get("/api/evaluations/{evaluation_id}")
 async def get_evaluation(evaluation_id: str, conn: sqlite3.Connection = Conn):
-    ev = _with_titles(conn, db.get_evaluation(conn, evaluation_id))
-    # final: пересчёт итога с учётом решений по апелляциям — следующий этап; пока null.
-    return {"evaluation": ev, "appeals": db.list_appeals(conn, evaluation_id), "final": None}
+    """Исходная оценка (неизменна), апелляции с журналом и финальный итог с учётом решений."""
+    ev, appeals, final = _with_titles(conn, db.get_evaluation(conn, evaluation_id))
+    return {"evaluation": ev, "appeals": appeals, "final": final}
 
 
 # --- 5. пакетная оценка ----------------------------------------------------------------------
@@ -442,6 +452,7 @@ async def results(group_id: str | None = None, batch_id: str | None = None, chec
                   format: str | None = None, conn: sqlite3.Connection = Conn):
     cl = db.get_checklist(conn, checklist_id, checklist_version)
     latest = db.latest_evaluations(conn, checklist_id=cl["id"], checklist_version=cl["version"], batch_id=batch_id)
+    apply_final_totals(conn, latest.values())
     flag_ids = [c["id"] for c in cl["criteria"] if c["type"] == "flag"]
     items = []
     for c in db.search_conversations(conn, group_id=group_id, channel=channel, language=language):
@@ -450,10 +461,12 @@ async def results(group_id: str | None = None, batch_id: str | None = None, chec
             continue
         answers = {r["criterion_id"]: json.loads(r["answer_json"]) for r in conn.execute(
             "SELECT criterion_id, answer_json FROM criterion_results WHERE evaluation_id = ?", (ev["id"],))}
+        final_answers = ev.get("final_answers") or answers
         items.append({"conversation_id": c["conversation_id"], "channel": c["channel"], "language": c["language"],
                       "evaluation_id": ev["id"], "status": ev["status"], "total": ev["total"],
-                      "final_total": ev["final_total"], "answers": answers, "final_answers": answers,
-                      "flags": [f for f in flag_ids if answers.get(f) == "yes"], "open_appeals": ev["open_appeals"]})
+                      "final_total": ev["final_total"], "answers": answers, "final_answers": final_answers,
+                      "flags": [f for f in flag_ids if final_answers.get(f) == "yes"],
+                      "open_appeals": ev["open_appeals"]})
     totals = [i["total"] for i in items if i["total"] is not None]
     summary = {"count": len(items), "avg_total": round(sum(totals) / len(totals), 2) if totals else None,
                "not_evaluable": sum(i["status"] == "not_evaluable" for i in items),
@@ -476,18 +489,24 @@ async def results(group_id: str | None = None, batch_id: str | None = None, chec
             "items": items, "summary": summary, "total": len(items)}
 
 
-# --- 7. апелляции (хранение по контракту; пересчёт final — следующий этап) -----------------------
+# --- 7. апелляции: open → in_review → confirmed | changed; журнал событий; final через scoring ----------
 @router.post("/api/evaluations/{evaluation_id}/appeals", status_code=201)
 async def create_appeal(evaluation_id: str, body: AppealRequest, conn: sqlite3.Connection = Conn):
     return db.insert_appeal(conn, evaluation_id, body.criterion_id, body.comment, body.author)
+
+
+@router.post("/api/appeals/{appeal_id}/review")
+async def review_appeal(appeal_id: str, body: ReviewRequest | None = None, conn: sqlite3.Connection = Conn):
+    """Проверяющий берёт апелляцию в работу: open → in_review."""
+    return db.start_review(conn, appeal_id, body.reviewer if body else None)
 
 
 @router.get("/api/appeals")
 async def list_appeals(status: str | None = None, evaluation_id: str | None = None,
                        conversation_id: str | None = None, criterion_id: str | None = None,
                        conn: sqlite3.Connection = Conn):
-    if status is not None and status not in ("open", "decided"):
-        raise ApiError(400, "bad_request", "status: open | decided")
+    if status is not None and status not in db.APPEAL_STATUSES:
+        raise ApiError(400, "bad_request", "status: " + " | ".join(db.APPEAL_STATUSES))
     items = db.query_appeals(conn, status=status, evaluation_id=evaluation_id, conversation_id=conversation_id,
                              criterion_id=criterion_id)
     return {"items": items, "total": len(items)}
@@ -514,7 +533,8 @@ async def decide_appeal(appeal_id: str, body: DecisionRequest, conn: sqlite3.Con
             raise db.ValidationFailed([{"path": "new_answer", "message": str(e)}])
     decided = db.insert_decision(conn, appeal_id, body.decision, new_answer=new_answer, reason=body.reason,
                                  reviewer=body.reviewer)
-    return {"appeal": decided, "final": None}
+    ev = db.get_evaluation(conn, appeal["evaluation_id"])
+    return {"appeal": decided, "final": final_result(conn, ev)}
 
 
 # --- 8. логи LLM -----------------------------------------------------------------------------

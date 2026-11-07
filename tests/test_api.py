@@ -166,7 +166,8 @@ def test_evaluate_get_list(client):
     assert ev["cost"]["calls"] == 8 and len(ev["llm_call_ids"]) == 8 and ev["final_total"] == 93.08
     assert ev["open_appeals"] == 0 and ev["effort"] is None and ev["votes"] == 1
     got = client.get(f"/api/evaluations/{ev['id']}").json()
-    assert got["evaluation"]["id"] == ev["id"] and got["appeals"] == [] and got["final"] is None
+    assert got["evaluation"]["id"] == ev["id"] and got["appeals"] == []
+    assert got["final"]["total"] == 93.08 and all(c["source"] == "original" for c in got["final"]["criteria"])
     ne = _evaluate(client, "edge-ru-005")
     assert ne["status"] == "not_evaluable" and ne["total"] is None and ne["criteria"] == [] and ne["cost"]["calls"] == 0
     lst = client.get("/api/evaluations").json()
@@ -266,15 +267,31 @@ def test_appeals_and_decisions(client):
     assert r.status_code == 422                                                     # нет причины
     r = client.post(f"/api/appeals/{ap['id']}/decision", json={"decision": "change", "new_answer": 15,
                                                                "reason": "деталь", "reviewer": "qa"})
-    assert r.status_code == 201 and r.json()["appeal"]["status"] == "decided" and r.json()["final"] is None
+    assert r.status_code == 201 and r.json()["appeal"]["status"] == "changed"
+    fin = r.json()["final"]
+    assert fin["total"] == 85.38 and next(c for c in fin["criteria"] if c["criterion_id"] == "c04")["source"] == "appeal"
+    assert [e["event"] for e in r.json()["appeal"]["events"]] == ["opened", "in_review", "decided"]
     assert r.json()["appeal"]["decision"]["new_answer"] == 15
     assert client.post(f"/api/appeals/{ap['id']}/decision", json={"decision": "confirm"}).status_code == 409
-    assert client.get(f"/api/evaluations/{ev['id']}").json()["evaluation"]["total"] == 93.08    # исходная неизменна
+    got = client.get(f"/api/evaluations/{ev['id']}").json()
+    assert got["evaluation"]["total"] == 93.08 and got["evaluation"]["final_total"] == 85.38       # исходная неизменна
+    assert got["final"]["total"] == 85.38 and got["appeals"][0]["status"] == "changed"
+    res = client.get("/api/results").json()["items"][0]
+    assert res["total"] == 93.08 and res["final_total"] == 85.38 and res["final_answers"]["c04"] == 15 and res["answers"]["c04"] == 20
+    conv = client.get("/api/conversations", params={"status": "completed"}).json()["items"][0]["latest_evaluation"]
+    assert conv["total"] == 93.08 and conv["final_total"] == 85.38
+    # review: open → in_review
+    ap2 = client.post(f"/api/evaluations/{ev['id']}/appeals", json={"criterion_id": "c06", "comment": "x"}).json()
+    r = client.post(f"/api/appeals/{ap2['id']}/review", json={"reviewer": "qa"})
+    assert r.status_code == 200 and r.json()["status"] == "in_review"
+    assert client.post(f"/api/appeals/{ap2['id']}/review", json={"reviewer": "qa"}).status_code == 409
+    assert client.get("/api/appeals", params={"status": "in_review"}).json()["total"] == 1
+    assert client.get("/api/appeals", params={"status": "weird"}).status_code == 400
     lst = client.get("/api/appeals", params={"status": "decided"}).json()
     assert lst["total"] == 1 and lst["items"][0]["id"] == ap["id"]
     assert client.get("/api/appeals", params={"status": "open"}).json()["total"] == 0
     assert client.get("/api/appeals", params={"conversation_id": "edge-ru-001", "criterion_id": "c04"}).json()["total"] == 1
-    assert client.get(f"/api/appeals/{ap['id']}").json()["status"] == "decided"
+    assert client.get(f"/api/appeals/{ap['id']}").json()["status"] == "changed"
     assert client.get("/api/appeals/ap_nope").status_code == 404
 
 
