@@ -1,8 +1,6 @@
 # REST API — контракт (v0.1, реализован в `backend/main.py`)
 
-Отличия реализации от текста ниже (состояние на 2026-11-07): `final` в ответах
-`GET /api/evaluations/{id}` и решения по апелляции пока `null` — пересчёт итога с
-учётом решений делается следующим этапом; `GET /api/conversations/{id}` дополнительно
+Отличия реализации от текста ниже (состояние на 2026-11-07): `GET /api/conversations/{id}` дополнительно
 отдаёт `facts`; diff версий дополнительно отдаёт `other_changed` (name/sections/settings);
 `summary` результатов дополнительно содержит `failed`; объект оценки содержит
 `prompt_version`, `votes`, `effort`. Тесты эндпоинтов — `tests/test_api.py`.
@@ -260,8 +258,9 @@ JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся 
     "flags": [ … ],
     "criteria": [ { "criterion_id": "c04", "answer": 15, "points": 15.0,
                     "applicable": true, "source": "appeal",      // original | appeal
-                    "appeal_id": "ap_01J…" } ]
-  } }
+                    "appeal_id": "ap_01J…" } ],
+    "changed": 1                   // число критериев, изменённых решениями
+  } }                              // final = null для not_evaluable / failed
 ```
 
 ### `GET /api/evaluations`
@@ -327,8 +326,15 @@ JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся 
 ## 7. Апелляции и решения
 
 Апелляция привязана к оценке и критерию. На пару (оценка, критерий) — одна
-открытая апелляция (иначе 409). Решение одно на апелляцию, после него
-апелляция закрыта.
+нерешённая апелляция (иначе 409). Решение одно на апелляцию, после него
+апелляция закрыта. Статусы: `open` → `in_review` (проверяющий взял в работу,
+`POST /api/appeals/{id}/review`) → `confirmed` | `changed` (решение). Решение из
+`open` допускается — событие `in_review` записывается автоматически. Журнал
+событий (`events[]`: opened | in_review | decided, actor, note, created_at) —
+append-only. Исходная оценка не меняется; `final` пересчитывается `scoring.py`
+по ответам исходной оценки с заменой по решениям `change` (последнее решение
+по критерию побеждает); `final_total` и `final_answers` отдаются в списках
+диалогов, оценок и в результатах.
 
 ### `POST /api/evaluations/{evaluation_id}/appeals` → 201
 ```json
@@ -339,8 +345,9 @@ JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся 
 ```json
 { "id": "ap_01J…", "evaluation_id": "ev_…", "conversation_id": "p1-ru-003",
   "criterion_id": "c04", "comment": "…", "author": "…", "created_at": "…",
-  "status": "open",               // open | decided
+  "status": "open",               // open | in_review | confirmed | changed
   "original": { "answer": 10, "points": 10.0 },
+  "events": [ { "event": "opened", "actor": "operator_ivanov", "note": null, "created_at": "…" } ],
   "decision": null }
 ```
 
@@ -351,7 +358,7 @@ JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся 
   "new_answer": 15,               // обязателен для change; проверяется по типу/шкале/na_allowed критерия
   "reason": "Комиссия названа, не уточнён рынок",   // обязателен для change
   "reviewer": "qa_lead" }
-// 201 → { "appeal": {… "status": "decided",
+// 201 → { "appeal": {… "status": "changed",            // confirmed при decision=confirm
 //          "decision": { "decision": "change", "new_answer": 15, "reason": "…",
 //                        "reviewer": "qa_lead", "decided_at": "…" } },
 //          "final": { … как в GET /api/evaluations/{id} … } }
@@ -359,8 +366,9 @@ JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся 
 
 | Метод | Путь | Назначение |
 |---|---|---|
-| GET | `/api/appeals` | фильтры `status`, `evaluation_id`, `conversation_id`, `criterion_id` |
-| GET | `/api/appeals/{id}` | одна апелляция |
+| POST | `/api/appeals/{id}/review` | взять в работу: open → in_review (`{ "reviewer": "qa_lead" }`); 409, если уже на рассмотрении или решена |
+| GET | `/api/appeals` | фильтры `status` (open \| in_review \| active \| confirmed \| changed \| decided), `evaluation_id`, `conversation_id`, `criterion_id` |
+| GET | `/api/appeals/{id}` | одна апелляция с журналом |
 
 ---
 
