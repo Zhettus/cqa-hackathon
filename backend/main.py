@@ -24,10 +24,11 @@ from backend import data_source, db
 from backend.appeals import apply_final_totals, final_result
 from backend.checklist import validate_checklist
 from backend.config import ROOT, get_settings
-from backend.evaluator import Evaluator
+from backend.evaluator import Evaluator, default_votes
 from backend.llm import DEFAULT_MODELS, LLMError, get_provider
 from backend.normalize import normalize_call, normalizer_version, text_hash
 from backend.preprocess import preprocess
+from backend.prompt import prompt_version
 from backend.scoring import AnswerError, validate_answer
 
 VERSION = "0.1.0"
@@ -175,9 +176,18 @@ async def health():
 
 
 @router.get("/api/meta")
-async def meta():
+async def meta(conn: sqlite3.Connection = Conn):
+    """Конфигурация, которую стоит сверить перед контрольным прогоном: модель, effort, голоса,
+    нормализация звонков, версия промпта (хеш prompt.py + rules.md) и текущая версия чек-листа."""
     kind = (os.getenv("LLM_PROVIDER") or "anthropic").lower()
-    return {"llm": {"provider": kind, "model": os.getenv("LLM_MODEL") or DEFAULT_MODELS.get(kind)},
+    checklists = [{"id": c["id"], "version": c["version"]} for c in db.list_checklists(conn)]
+    return {"llm": {"provider": kind, "model": os.getenv("LLM_MODEL") or DEFAULT_MODELS.get(kind),
+                    "effort": os.getenv("LLM_EFFORT", "high") if kind == "anthropic" else None},
+            "votes": default_votes(),
+            "normalize_calls": os.getenv("NORMALIZE_CALLS", "0").lower() in ("1", "true", "yes"),
+            "prompt_version": prompt_version(),
+            "prompt_version_normalized": prompt_version(normalized=True),
+            "checklists": checklists,
             "data_api_configured": bool(get_settings().data_api_url), "languages": LANGUAGES,
             "channels": CHANNELS, "version": VERSION}
 

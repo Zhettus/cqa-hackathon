@@ -174,6 +174,10 @@ def _answer_options(criterion: dict) -> str:
     return 'Тип: да/нет. answer = "yes" или "no".'
 
 
+REFERENCE_RULE = ("Если ответ оператора противоречит им — это ошибочная рекомендация. Если нужного факта нет — "
+                  "оценивай по диалогу как обычно; отсутствие факта не является основанием снижать балл.")
+
+
 def build_criterion_block(criterion: dict, hints: list[dict] | None = None, feedback: str | None = None,
                           others: list[dict] | None = None) -> str:
     na = (f'N/A разрешён (answer = "na") только при условии: {criterion.get("na_condition", "")}'
@@ -181,6 +185,9 @@ def build_criterion_block(criterion: dict, hints: list[dict] | None = None, feed
     parts = [f"КРИТЕРИЙ {criterion['id']}: {criterion['title']}",
              f"Описание: {criterion.get('description', '')}",
              _answer_options(criterion), na]
+    if criterion.get("reference"):          # справочник компании из конфига критерия (любого)
+        parts.append(f"СПРАВОЧНЫЕ ФАКТЫ КОМПАНИИ. {REFERENCE_RULE}")
+        parts.append(criterion["reference"].strip())
     if others:
         parts.append("ДРУГИЕ КРИТЕРИИ ЧЕК-ЛИСТА (оцениваются отдельно; не снижай текущий критерий за то, что относится к ним):")
         parts += [f"    - {o['title']}: {o.get('description', '')}" for o in others]

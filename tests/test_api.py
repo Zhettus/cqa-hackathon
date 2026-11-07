@@ -44,6 +44,9 @@ def test_health_meta_and_ui(client):
     assert client.get("/api/health").json() == {"status": "ok"}
     m = client.get("/api/meta").json()
     assert m["languages"] == ["RU", "KZ", "EN"] and m["channels"] == ["agent chat", "voice call"] and "llm" in m
+    assert m["prompt_version"].startswith("v1-") and m["prompt_version_normalized"].startswith(m["prompt_version"] + "+")
+    assert m["checklists"] == [{"id": "chat-quality", "version": 1}] and isinstance(m["votes"], int)
+    assert m["normalize_calls"] in (True, False)
     assert client.get("/ui/").status_code == 200 and client.get("/", follow_redirects=False).status_code == 307
 
 

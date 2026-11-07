@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from backend.checklist import load_default_checklist, validate_checklist
+from backend.checklist import load_checklist_files, load_default_checklist, validate_checklist
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS datasets (
@@ -234,14 +234,19 @@ def _migrate(conn: sqlite3.Connection) -> None:
 
 
 def init_db(conn: sqlite3.Connection) -> None:
-    """Создаёт схему; при первом старте кладёт чек-лист из SPEC как версию 1."""
+    """Создаёт схему; засевает версии чек-листа из backend/checklists/default_v*.json, которых ещё нет
+    (v1 — исходный чек-лист из docs/SPEC.md; следующие — например, со справочником reference)."""
     conn.executescript(SCHEMA + _triggers())
     _migrate(conn)
-    default = load_default_checklist()
-    exists = conn.execute("SELECT 1 FROM checklists WHERE id = ?", (default["id"],)).fetchone()
-    if not exists:
-        insert_checklist_version(conn, default, author="system", comment="Исходный чек-лист из docs/SPEC.md",
-                                 version=int(default.get("version", 1)))
+    for cl in load_checklist_files():
+        version = int(cl.get("version", 1))
+        exists = conn.execute("SELECT 1 FROM checklists WHERE id = ? AND version = ?", (cl["id"], version)).fetchone()
+        if not exists:
+            latest = conn.execute("SELECT MAX(version) FROM checklists WHERE id = ?", (cl["id"],)).fetchone()[0]
+            if latest is not None and version <= latest:
+                continue                                   # версии неизменяемы: старые файлы не перезаписываются
+            comment = "Исходный чек-лист из docs/SPEC.md" if version == 1 else f"Версия {version} из файла"
+            insert_checklist_version(conn, cl, author="system", comment=comment, version=version)
     conn.commit()
 
 

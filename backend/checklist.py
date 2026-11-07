@@ -7,8 +7,10 @@ from pathlib import Path
 from backend.guards import validate_guards
 from backend.hints import validate_hints
 
-DEFAULT_CHECKLIST_PATH = Path(__file__).parent / "checklists" / "default_v1.json"
+CHECKLISTS_DIR = Path(__file__).parent / "checklists"
+DEFAULT_CHECKLIST_PATH = CHECKLISTS_DIR / "default_v1.json"
 CRITERION_TYPES = {"binary", "scale", "flag"}
+MAX_REFERENCE_CHARS = 20000
 
 # Умолчания settings: недостающие ключи версии чек-листа берутся отсюда.
 # pause_threshold_s по умолчанию равен first_response_threshold_s (как в preprocess).
@@ -19,6 +21,12 @@ MAX_ROUNDING_DECIMALS = 6
 
 def load_default_checklist() -> dict:
     return json.loads(DEFAULT_CHECKLIST_PATH.read_text(encoding="utf-8"))
+
+
+def load_checklist_files() -> list[dict]:
+    """Все версии чек-листа из backend/checklists/default_v*.json по возрастанию версии (засеваются при старте)."""
+    files = sorted(CHECKLISTS_DIR.glob("default_v*.json"), key=lambda f: int(f.stem.split("_v")[1]))
+    return [json.loads(f.read_text(encoding="utf-8")) for f in files]
 
 
 def effective_settings(checklist: dict) -> dict:
@@ -107,6 +115,9 @@ def validate_checklist(cl: dict) -> list[dict]:
                     err(f"{p}.scale", "максимальная ступень должна быть > 0")
         elif scale:
             err(f"{p}.scale", "шкала допустима только для type=scale")
+        ref = c.get("reference")
+        if ref is not None and (not isinstance(ref, str) or len(ref) > MAX_REFERENCE_CHARS):
+            err(f"{p}.reference", f"справочник — текст до {MAX_REFERENCE_CHARS} символов")
     settings_errs = validate_settings(cl.get("settings"))
     errs += settings_errs
     if not settings_errs:
