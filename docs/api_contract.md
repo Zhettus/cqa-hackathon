@@ -133,7 +133,8 @@ JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся 
   "id": "chat-quality", "version": 2, "name": "Чек-лист качества чатов",
   "created_at": "…", "author": "qa_lead", "comment": "Заменён c06",
   "is_latest": true,
-  "settings": { "first_response_threshold_s": 180 },
+  "settings": { "first_response_threshold_s": 180, "pause_threshold_s": 180, "rounding_decimals": 2 },
+                                  // недостающие ключи берутся из умолчаний (pause_threshold_s = first_response_threshold_s)
   "sections": [ { "id": "start", "title": "Начало и понимание запроса" } ],
   "criteria": [ {
     "id": "c04", "section": "safety", "title": "Корректная и полная консультация",
@@ -146,7 +147,9 @@ JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся 
 ```
 Правила валидации (422): уникальные `id` критериев и секций; секция существует;
 `scale` обязателен и непуст только для `scale`, значения уникальны, целые, ≥0;
-`weight` ≥ 0, для `flag` = 0; `na_condition` обязателен при `na_allowed: true`.
+`weight` ≥ 0, для `flag` = 0; `na_condition` обязателен при `na_allowed: true`;
+`settings`: пороги — неотрицательные числа, `rounding_decimals` — целое 0–6; `guards` критерия —
+известные факты и операторы, `value_from` разрешим, есть действие; `hints` — компилируемые регулярки.
 
 | Метод | Путь | Назначение |
 |---|---|---|
@@ -177,12 +180,15 @@ JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся 
   "checklist": { "id": "chat-quality", "version": 1 },
   "status": "completed",          // completed | not_evaluable | failed
   "status_reason": null,          // для not_evaluable: "Нет реплик оператора"; для failed — текст ошибки
+                                  // (любой сбой: предобработка, провайдер, валидация после повторов)
   "batch_id": null,
   "created_at": "…", "duration_ms": 8400,
   "model": { "provider": "anthropic", "name": "…" },
   "llm_call_ids": ["llm_01J…"],   // пусто для not_evaluable
   "cost": { "calls": 8, "tokens_in": 52000, "tokens_out": 3100, "usd": 0.27,
             "rejected_calls": 1 },    // сумма по llm_calls этой оценки; rejected — отклонённые валидатором
+  "prompt_version": "v1-4367f2210a",   // схема промпта + хеш prompt.py и docs/rules.md
+  "votes": 1, "effort": "high",         // голосов на критерий; глубина рассуждения модели
   "facts": {                      // посчитано backend/preprocess.py (инвариант 3), поля Facts
     "channel": "agent chat",
     "client_language": "RU", "operator_first_reply_language": "RU",
@@ -198,118 +204,7 @@ JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся 
     "identity_source": null,                                // system | verbal | null
     "closing_event": "none",        // operator_closed | connection_lost | client_left | client_ended_call | none
     "operator_messages": 3, "duplicates": []
-  },
-  "total": 76.88, "final_total": 76.88, "open_appeals": 0,
-      "created_at": "…" }        // null, если не оценивался
-  } ], "total": 65 }
-```
-
-### `GET /api/conversations/{conversation_id}`
-Транскрипт с исходными полями (не изменяются) и производными полями,
-посчитанными кодом.
-```json
-{
-  "conversation_id": "p4-ru-002", "group_id": "DEV",
-  "channel": "voice call", "language": "RU",
-  "audio": { "available": true, "url": "/api/conversations/p4-ru-002/audio",
-             "content_type": "audio/mpeg" },          // null, если аудио нет
-  "operator_start_n": 2,               // первая реплика оператора после эскалации/«Агент присоединился»; null, если нет
-  "segments": [                         // интервалы, вычисленные кодом
-    { "kind": "pre_operator",  "from_n": 1,  "to_n": 1 },
-    { "kind": "operator",      "from_n": 2,  "to_n": 17 },
-    { "kind": "hold",          "from_n": 18, "to_n": 58 },
-    { "kind": "consultation",  "from_n": 19, "to_n": 46 },
-    { "kind": "after_end",     "from_n": 73, "to_n": 73 }
-  ],
-  "messages": [ {
-    "n": 3,
-    "timestamp": "2026-11-03T13:49:47.2615709+00:00",  // исходник
-    "speaker": "operator",                                // исходник
-    "text": "…",                                          // исходник
-    "clean_text": "…",                                    // нормализованный, для модели
-    "t_s": 27.24,          // секунд от первой реплики диалога
-    "audio_offset_s": 27.24, // позиция в плеере; null для чатов
-    "segment": "operator", // pre_operator|ivr|operator|hold|consultation|after_end
-    "flags": [],           // duplicate|ivr|client_not_hearing|after_end|dtmf
-    "counts_for_operator": true,  // засчитывается ли реплика оператору (инвариант 9)
-    "event": null          // для system: escalation|identity_verified|operator_closed|client_left|connection_lost|agent_joined|call_ended|hold_start|hold_end|consult_start|consult_end|recording|language_changed|other
-  } ]
-}
-```
-
-### `GET /api/conversations/{conversation_id}/audio`
-Отдаёт `data/audio/{id}.<ext>`, поддерживает `Range` (нужно для перемотки).
-404, если файла нет.
-
----
-
-## 3. Чек-листы с версиями
-
-Версия неизменна после создания. Изменение = новая версия. Оценка ссылается
-на `{id, version}`. Формат тела — как в `docs/SPEC.md`, плюс `id` и `settings`.
-
-**Объект чек-листа (версии)**
-```json
-{
-  "id": "chat-quality", "version": 2, "name": "Чек-лист качества чатов",
-  "created_at": "…", "author": "qa_lead", "comment": "Заменён c06",
-  "is_latest": true,
-  "settings": { "first_response_threshold_s": 180 },
-  "sections": [ { "id": "start", "title": "Начало и понимание запроса" } ],
-  "criteria": [ {
-    "id": "c04", "section": "safety", "title": "Корректная и полная консультация",
-    "type": "scale",                    // binary | scale | flag
-    "weight": 20, "na_allowed": true,
-    "na_condition": "…", "description": "…",
-    "scale": [ { "value": 20, "description": "…" } ]   // только для scale
-  } ]
-}
-```
-Правила валидации (422): уникальные `id` критериев и секций; секция существует;
-`scale` обязателен и непуст только для `scale`, значения уникальны, целые, ≥0;
-`weight` ≥ 0, для `flag` = 0; `na_condition` обязателен при `na_allowed: true`.
-
-| Метод | Путь | Назначение |
-|---|---|---|
-| GET | `/api/checklists` | список: последняя версия каждого (`items[]` без `criteria`, с `criteria_count`) |
-| POST | `/api/checklists` | создать новый чек-лист → версия 1 (201) |
-| GET | `/api/checklists/{id}` | последняя версия целиком |
-| GET | `/api/checklists/{id}/versions` | `[{version, created_at, author, comment, criteria_count}]` |
-| GET | `/api/checklists/{id}/versions/{version}` | конкретная версия |
-| POST | `/api/checklists/{id}/versions` | новая версия (201) |
-| GET | `/api/checklists/{id}/versions/{a}/diff/{b}` | разница для UI: `{added[], removed[], changed[{criterion_id, fields[]}]}` |
-| POST | `/api/checklists/validate` | проверить тело без сохранения → `{valid, errors[]}` |
-
-`POST /api/checklists/{id}/versions` — тело: полный чек-лист плюс
-`base_version`. Если `base_version` ≠ последней — 409 (кто-то сохранил раньше).
-```json
-{ "base_version": 1, "comment": "Заменён c06", "author": "qa_lead",
-  "name": "…", "settings": {…}, "sections": […], "criteria": […] }
-```
-
----
-
-## 4. Оценка
-
-### Объект оценки (неизменяемый, инвариант 6)
-```json
-{
-  "id": "ev_01J…", "conversation_id": "p1-ru-003",
-  "checklist": { "id": "chat-quality", "version": 1 },
-  "status": "completed",          // completed | not_evaluable | failed
-  "status_reason": null,          // для not_evaluable: "Нет реплик оператора"; для failed — текст ошибки
-  "batch_id": null,
-  "created_at": "…", "duration_ms": 8400,
-  "model": { "provider": "anthropic", "name": "…" },
-  "llm_call_ids": ["llm_01J…"],   // пусто для not_evaluable
-  "cost": { "calls": 8, "tokens_in": 52000, "tokens_out": 3100, "usd": 0.27,
-            "rejected_calls": 1 },    // сумма по llm_calls этой оценки; rejected — отклонённые валидатором
-  "facts": {                      // посчитано кодом (инвариант 3)
-    "first_response_s": 75, "first_response_threshold_s": 180,
-    "first_response_exceeded": false,
-    "unwarned_gaps": [ { "from_n": 9, "to_n": 10, "gap_s": 311 } ],
-    "hold_s": 0, "operator_messages": 3
-  },
+  },                              // {} для failed до предобработки
   "total": 76.88,                 // null, если нет применимых критериев с весом или not_evaluable
   "sections": [ { "id": "start", "title": "…", "score": 100.0,
                   "points": 25, "max_points": 25 } ],    // score null, если в секции всё N/A
@@ -322,7 +217,8 @@ JSON в UTF-8, время — ISO 8601 UTC. Фронтенд раздаётся 
     "explanation": "Вопрос о комиссии проигнорирован…",   // на русском
     "evidence": {
       "kind": "quote",                       // quote | checked_range | na_condition
-      "quotes": [ { "n": 7, "text": "…" } ], // для quote; цитата — точная подстрока text реплики n
+      "quotes": [ { "n": 7, "text": "…",     // для quote; text — ДОСЛОВНАЯ подстрока text реплики n
+                    "model_quote": "…" } ],  // как написала модель (принято по нечёткому совпадению ≥ 0.85)
       "range": null,                         // для checked_range: { "from_n": 4, "to_n": 14 }
       "na_condition": null                   // для na_condition: текст выполненного условия
     },
