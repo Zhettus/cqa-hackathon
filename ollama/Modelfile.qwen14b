@@ -1,0 +1,4 @@
+# Вариант qwen2.5:14b с контекстом 16k: промпты оценки занимают 6–8k токенов, у Ollama контекст по умолчанию мал.
+FROM qwen2.5:14b
+PARAMETER num_ctx 16384
+PARAMETER temperature 0
