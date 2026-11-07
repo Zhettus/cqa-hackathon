@@ -6,23 +6,10 @@ import pytest
 from backend.scoring import AnswerError, score, to_jsonable
 from tests.conftest import ROOT
 
-# Записи чернового эталона, где total не равен расчёту по формуле SPEC
-# (арифметика в разметке, файлы eval/*.json менять нельзя). strict=True:
-# как только человек исправит total, тест начнёт проходить и потребует убрать запись отсюда.
-KNOWN_GOLD_TOTAL_ERRORS = {
-    "p1-ru-003": "по SPEC (10+15+10+15+10.5+0)/80 = 75.63, в эталоне 76.88",
-    "p1-ru-029": "по SPEC (10+20+0+15+0)/65 = 69.23, в эталоне 71.92",
-    "p1-en-014": "по SPEC (10+0+10+0+10.5+0)/85 = 35.88, в эталоне 38.53",
-}
-
-
 def _gold_cases():
     for name in ("gold_tune.json", "edge_cases.json"):
         for a in json.loads((ROOT / "eval" / name).read_text(encoding="utf-8"))["annotations"]:
-            marks = []
-            if a["conversation_id"] in KNOWN_GOLD_TOTAL_ERRORS:
-                marks.append(pytest.mark.xfail(strict=True, reason=KNOWN_GOLD_TOTAL_ERRORS[a["conversation_id"]]))
-            yield pytest.param(a, id=f"{name}:{a['conversation_id']}", marks=marks)
+            yield pytest.param(a, id=f"{name}:{a['conversation_id']}")
 
 
 @pytest.mark.parametrize("ann", list(_gold_cases()))
