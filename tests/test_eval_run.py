@@ -1,6 +1,8 @@
 """Метрики и проверка edge в eval/run.py, и кэш оценок (тестовый провайдер, без сети)."""
 import asyncio
 
+import pytest
+
 from backend import db
 from backend.checklist import load_default_checklist
 from backend.evaluator import Evaluator
@@ -117,3 +119,30 @@ def test_failed_evaluation_counts_as_mismatch_everywhere():
     ne = compare({"conversation_id": "y", "status": "not_evaluable", "total": None, "criteria": []},
                  {"conversation_id": "y", "answers": None, "total": None, "expected_behavior": "not_evaluable"}, CL, rec)
     assert not ne["status_mismatch"] and ne["criteria"] == [] and metrics([ne], CL)["n"] == 0
+
+
+def test_accept_alternative_answers():
+    """Поле accept эталона: допустимая альтернатива считается совпадением, итог пересчитывается под неё."""
+    gold = {"conversation_id": "x", "answers": {"c01": "yes", "c02": "yes", "c03": "na", "c04": 10, "c05": "yes",
+                                               "c06": 10, "c07": "yes", "c08": "no"}, "total": 87.5,
+            "uncertain": ["c04"], "accept": {"c04": [0, 10]}, "notes": ""}
+    rec = {"conversation_id": "x", "language": "RU", "channel": "agent chat", "transcript": []}
+
+    def ev(c04, total):
+        answers = {**gold["answers"], "c04": c04}
+        return {"conversation_id": "x", "status": "completed", "total": total, "criteria": [
+            {"criterion_id": cid, "answer": a, "explanation": "", "evidence": {}} for cid, a in answers.items()]}
+
+    r0 = compare(ev(0, 75.0), gold, CL, rec)
+    c04 = next(c for c in r0["criteria"] if c["criterion_id"] == "c04")
+    assert c04["match"] and c04["accepted"] and c04["step_error"] == 0
+    assert r0["accepted"] == {"c04": 0} and r0["gold_total"] == 75.0 and r0["gold_total_listed"] == 87.5
+    r10 = compare(ev(10, 87.5), gold, CL, rec)
+    assert all(c["match"] for c in r10["criteria"]) and "accepted" not in r10 and r10["gold_total"] == 87.5
+    r5 = compare(ev(5, 81.25), gold, CL, rec)
+    assert not next(c for c in r5["criteria"] if c["criterion_id"] == "c04")["match"]
+    mt = metrics([r0, r10, r5], CL)
+    assert mt["match"] == 23 and mt["total_mae"] == pytest.approx(6.25 / 3)     # только r5 даёт ошибку итога
+    md = render({"started": "t", "gold": ["g"], "prompt_version": "v", "model": "m", "votes": 1, "usd": 0,
+                 "seconds": 1}, [r0], mt, [], CL)
+    assert "x/c04=0" in md

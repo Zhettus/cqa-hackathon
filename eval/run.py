@@ -18,8 +18,10 @@ import time
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from backend import data_source, db
+from backend.scoring import score
 from backend.config import get_settings
 from backend.evaluator import Evaluator, default_votes
 from backend.llm import LLMError, get_provider
@@ -86,18 +88,29 @@ def compare(ev: dict, gold: dict, checklist: dict, record: dict) -> dict:
     pre = preprocess(record, checklist.get("settings") or {})
     msgs = {m.idx: m for m in pre.messages}
     by_id = {c["criterion_id"]: c for c in ev["criteria"]}
+    accept = gold.get("accept") or {}          # {"c04": [0, 10]} — допустимые альтернативы эталону
+    subs: dict[str, Any] = {}
     for cid, g in gold["answers"].items():
         c = by_id.get(cid)
         if c is None or cid not in crits:
             continue
+        accepted = c["answer"] != g and c["answer"] in (accept.get(cid) or [])
         row = {"criterion_id": cid, "type": crits[cid]["type"], "gold": g, "system": c["answer"],
-               "match": g == c["answer"], "explanation": c.get("explanation") or "",
+               "match": g == c["answer"] or accepted, "accepted": accepted,
+               "explanation": c.get("explanation") or "",
                "guards": [h for h in c.get("guards", [])], "evidence": c.get("evidence") or {},
                "confidence": c.get("confidence"), "uncertain": cid in res["uncertain"]}
-        row["step_error"] = step_error(crits[cid], g, c["answer"]) if crits[cid]["type"] == "scale" else None
+        row["step_error"] = (0 if accepted else step_error(crits[cid], g, c["answer"])) \
+            if crits[cid]["type"] == "scale" else None
         if not row["match"]:
             row["cause"] = cause_hint(crits[cid], row, ev, msgs)
+        if accepted:
+            subs[cid] = c["answer"]
         res["criteria"].append(row)
+    if subs:                                    # итог сравнивается с эталоном, пересчитанным под принятые ответы
+        res["accepted"] = subs
+        res["gold_total_listed"] = res["gold_total"]
+        res["gold_total"] = float(score(checklist, {**gold["answers"], **subs}).total)
     return res
 
 
@@ -213,6 +226,9 @@ def render(meta: dict, results: list[dict], mt: dict, edge: list[dict], checklis
             L.append(f"| {e['conversation_id']} | {', '.join(e['target'])} | {'✅' if e['passed'] else '❌'} | "
                      f"{'да' if e['all_criteria_match'] else 'нет'} | {md_cell('; '.join(e['problems']) or '—')} |")
         L.append(f"\nПройдено: {sum(e['passed'] for e in edge)}/{len(edge)}")
+    acc = [f"{r['conversation_id']}/{cid}={v}" for r in results for cid, v in (r.get("accepted") or {}).items()]
+    if acc:
+        L += ["", "**Принято как допустимая альтернатива (поле accept эталона):** " + ", ".join(acc)]
     rows = [(r, x) for r in results for x in r["criteria"] if not x["match"]]
     unc = [(r, x) for r, x in rows if x["uncertain"]]
     L += ["", f"## Расхождения ({len(rows)})", ""]
