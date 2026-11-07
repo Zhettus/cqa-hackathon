@@ -51,7 +51,8 @@ class Evaluator:
         feedback = None
         last_error = "нет ответа"
         for attempt in range(1, MAX_REPAIRS + 2):
-            user = build_criterion_block(criterion, ctx["hints"].get(criterion["id"]), feedback)
+            user = build_criterion_block(criterion, ctx["hints"].get(criterion["id"]), feedback,
+                                         others=[c for c in ctx["criteria"] if c["id"] != criterion["id"]])
             call = {"evaluation_id": ctx["evaluation_id"], "conversation_id": ctx["pre"].conversation_id,
                     "batch_id": ctx["batch_id"], "attempt": attempt, "provider": self.provider.name,
                     "model": self.provider.model, "started_at": db.now(),
@@ -140,7 +141,8 @@ class Evaluator:
 
         ctx = {"evaluation_id": eid, "batch_id": batch_id, "pre": pre,
                "system": build_system(pre.channel), "dialog": build_dialog_block(pre, settings),
-               "hints": {c["id"]: find_hints(c, pre) for c in checklist["criteria"]}}
+               "hints": {c["id"]: find_hints(c, pre) for c in checklist["criteria"]},
+               "criteria": checklist["criteria"]}
         outcomes = await asyncio.gather(*(self._criterion(ctx, c, n_votes) for c in checklist["criteria"]))
 
         failed = [o for o in outcomes if not o.votes]

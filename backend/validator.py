@@ -50,6 +50,17 @@ def quote_ratio(quote: str, text: str) -> float:
     return best
 
 
+_QUOTED = re.compile(r"«[^»]*»|\"[^\"]*\"|“[^”]*”")
+
+
+def is_russian(text: str) -> bool:
+    """Обоснование на русском: кириллицы вне цитат не меньше латиницы."""
+    bare = _QUOTED.sub(" ", text)
+    cyr = len(re.findall(r"[а-яёА-ЯЁ]", bare))
+    lat = len(re.findall(r"[a-zA-Z]", bare))
+    return cyr >= lat
+
+
 def validate_response(criterion: dict, resp: dict, pre: Preprocessed) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
     for key in ("evidence", "checked_range", "na_reason", "reasoning", "answer"):
@@ -91,8 +102,12 @@ def validate_response(criterion: dict, resp: dict, pre: Preprocessed) -> list[Va
     elif not evidence and rng is None:
         issues.append(ValidationIssue("missing_evidence",
                                       "нужны evidence (idx + цитата) или checked_range (где действие ожидалось)"))
-    if not (resp.get("reasoning") or "").strip():
+    reasoning = (resp.get("reasoning") or "").strip()
+    if not reasoning:
         issues.append(ValidationIssue("bad_shape", "пустое reasoning"))
+    elif not is_russian(reasoning):
+        issues.append(ValidationIssue("reasoning_language",
+                                      "reasoning должно быть на русском (цитаты — на языке оригинала в «»)"))
     return issues
 
 

@@ -50,6 +50,9 @@ BASE_SYSTEM = """Ты — эксперт отдела контроля каче�
    - N/A → na_reason: какое условие неприменимости выполнено.
 8. reasoning — 1–3 предложения на русском: почему выбран именно этот ответ со ссылками на #idx.
 9. Поля ответа заполняй в порядке схемы: сначала доказательства, потом рассуждение, в конце ответ.
+10. Каждый недостаток оператора оценивается ровно в одном критерии — в том, чья формулировка его
+   описывает. Не снижай текущий критерий за недостаток, который относится к другому критерию
+   чек-листа (их список дан вместе с критерием).
 
 Трактовки правил чек-листа (docs/rules.md, обязательны):
 """
@@ -157,12 +160,16 @@ def _answer_options(criterion: dict) -> str:
     return 'Тип: да/нет. answer = "yes" или "no".'
 
 
-def build_criterion_block(criterion: dict, hints: list[dict] | None = None, feedback: str | None = None) -> str:
+def build_criterion_block(criterion: dict, hints: list[dict] | None = None, feedback: str | None = None,
+                          others: list[dict] | None = None) -> str:
     na = (f'N/A разрешён (answer = "na") только при условии: {criterion.get("na_condition", "")}'
           if criterion.get("na_allowed") else "N/A НЕ разрешён.")
     parts = [f"КРИТЕРИЙ {criterion['id']}: {criterion['title']}",
              f"Описание: {criterion.get('description', '')}",
              _answer_options(criterion), na]
+    if others:
+        parts.append("ДРУГИЕ КРИТЕРИИ ЧЕК-ЛИСТА (оцениваются отдельно; не снижай текущий критерий за то, что относится к ним):")
+        parts += [f"    - {o['title']}: {o.get('description', '')}" for o in others]
     if hints:
         parts.append("ПОДСКАЗКИ (автоматический поиск по шаблонам; могут быть ложными, проверь по смыслу):")
         parts += [f"    #{h['idx']}: «{h['match']}» — {h['label']}" for h in hints]

@@ -1,0 +1,2752 @@
+{
+ "meta": {
+  "started": "2026-11-07 19:23",
+  "gold": [
+   "eval/edge_cases.json"
+  ],
+  "prompt_version": "v1-fde16c41fc",
+  "model": "anthropic/claude-opus-5-5",
+  "votes": 1,
+  "usd": 0.969543,
+  "seconds": 44.58163905143738
+ },
+ "results": [
+  {
+   "conversation_id": "edge-ru-001",
+   "status": "completed",
+   "language": "RU",
+   "channel": "agent chat",
+   "total": 93.08,
+   "gold_total": 93.08,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "В первой реплике оператора #10 есть приветствие «Здравствуйте!» и имя «Меня зовут Арман» на русском языке, совпадающем с языком клиента. Задержка первой реакции к этому критерию не относится.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте! Меня зовут Арман."
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "explanation": "К моменту подключения (#9) клиент уже указал суть вопроса и веб-версию (#1, #5). Оператор в #10 сразу дал ответ с учётом этих деталей, ничего не переспрашивая. По R3 это условие N/A.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Данных для ответа хватало с самого начала: до подключения оператора клиент сообщил вопрос и платформу (#1: «Где посмотреть мой тариф? Я в веб-версии.») и отказ от отчёта (#5), уточнять было нечего."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "explanation": "В #10 оператор дал общую навигационную инструкцию: где в веб-версии посмотреть тариф. Конкретный тариф и данные счёта клиента он не называл и защищённых действий не совершал, поэтому идентификация не требовалась и применимо условие N/A.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Запрос не требовал идентификации: оператор только объяснил, где в веб-версии найти тариф, данные счёта не раскрывал и защищённых действий не выполнял."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": 20,
+     "match": true,
+     "explanation": "Клиент спросил, где посмотреть тариф в веб-версии, не скачивая отчёт (#1, #5). Оператор в #10 дал конкретный путь в веб-версии, и клиент подтвердил, что нашёл тариф (#11). Вопрос закрыт полностью; задержка ответа к этому критерию не относится.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "В веб-версии откройте вкладку «Кабинет», название тарифа указано под вашим ФИО."
+       },
+       {
+        "n": 11,
+        "text": "Нашёл, спасибо."
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Оператор вежлив: поблагодарил за ожидание в #10 и попрощался в #12. Неудобство клиента («Отчёт скачивать не хочу», #5) он учёл: в #10 дал путь в веб-версии без скачивания отчёта, то есть отреагировал на конкретную проблему.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте! Меня зовут Арман. Спасибо за ожидание."
+       },
+       {
+        "n": 10,
+        "text": "В веб-версии откройте вкладку «Кабинет», название тарифа указано под вашим ФИО."
+       },
+       {
+        "n": 12,
+        "text": "Пожалуйста. Хорошего дня!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 7,
+     "system": 7,
+     "match": true,
+     "explanation": "Первая реакция оператора — 311 с при пороге 180 с, пауза #9→#10 без предупреждения, поэтому по R7 оценка не выше 7. Сам ответ в #10 ясный, клиент понял его без переспрашивания (#11 «Нашёл, спасибо»), поэтому один заметный сбой → 7. [Правило c06_timing] Первая реакция или пауза без предупреждения дольше порога — не выше 7 (R7) (first_response_s = 311 > 180; max_unwarned_gap_s = 311 > 180): ответ модели 7 уже соответствует правилу.",
+     "guards": [
+      {
+       "id": "c06_timing",
+       "conditions": [
+        "first_response_s = 311 > 180",
+        "max_unwarned_gap_s = 311 > 180"
+       ],
+       "before": 7,
+       "after": 7
+      }
+     ],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Спасибо за ожидание."
+       },
+       {
+        "n": 10,
+        "text": "В веб-версии откройте вкладку «Кабинет», название тарифа указано под вашим ФИО."
+       }
+      ],
+      "range": {
+       "from_n": 9,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Клиент подтвердил решение вопроса в #11 («Нашёл, спасибо»), после чего оператор попрощался в #12. По трактовке R8 прощание после подтверждения решения клиентом засчитывается как «Да».",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 11,
+        "text": "Нашёл, спасибо."
+       },
+       {
+        "n": 12,
+        "text": "Пожалуйста. Хорошего дня!"
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "explanation": "В репликах оператора #10 и #12 нет оскорблений и нет предложений платных услуг в обход компании. Конфиденциальные данные не раскрыты: в #10 оператор лишь объяснил, где в веб-версии найти тариф, но сам тариф не назвал, поэтому отсутствие идентификации нарушением не является.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "Первая реакция 5:11 после эскалации (00:41 → 05:52), порог 3 мин превышен. «Спасибо за ожидание» после паузы — не предупреждение.",
+   "cached": false,
+   "cost": {
+    "calls": 8,
+    "tokens_in": 28333,
+    "tokens_out": 2082,
+    "usd": 0.092314,
+    "rejected_calls": 0
+   },
+   "status_reason": null,
+   "expected_status": "completed"
+  },
+  {
+   "conversation_id": "edge-ru-002",
+   "status": "completed",
+   "language": "RU",
+   "channel": "agent chat",
+   "total": 88.75,
+   "gold_total": 88.75,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "В первой реплике #10 оператор поздоровался на русском (язык клиента) и представился по имени («меня зовут Дарина»), что соответствует R2.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, меня зовут Дарина."
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Оператор учёл известный из #1 запрос (отчёт брокера) и не стал переспрашивать его, а уточнил недостающую деталь — период (#10). Затем использовал ответ клиента из #11 в инструкции (#13).",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "За какой период вам нужен отчёт?"
+       },
+       {
+        "n": 13,
+        "text": "выберите период с 1 января по 31 декабря прошлого года"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 13
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "explanation": "Клиент спрашивал только, где скачать отчёт (#1, #11). Оператор в #13 дал общую инструкцию по приложению, не раскрывая данных счёта и не выполняя защищённых действий, поэтому идентификация не требовалась.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Запрос не требовал идентификации: клиент спрашивал, где скачать отчёт брокера, оператор дал общую инструкцию по навигации в приложении без раскрытия данных счёта и без защищённых действий."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": 20,
+     "match": true,
+     "explanation": "Клиент спросил, где скачать отчёт брокера. Оператор уточнил период (#10) и дал пошаговую инструкцию с указанием раздела и периода (#13). Клиент подтвердил, что скачал отчёт (#14), значит вопрос закрыт полностью. Пауза влияет на другой критерий, а не на полноту консультации.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "За какой период вам нужен отчёт?"
+       },
+       {
+        "n": 13,
+        "text": "В приложении откройте «Меню → Отчёты и документы → Отчёт брокера», выберите период с 1 января по 31 декабря прошлого года и скачайте документ."
+       },
+       {
+        "n": 14,
+        "text": "Скачал, спасибо."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Оператор вежлив на протяжении всего диалога (#10, #15). Неудобство клиента из-за долгого ожидания (#12 «Вы здесь?») получило конкретную реакцию — извинение за ожидание в #13. Сама пауза оценивается по критерию c06, а не здесь.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, меня зовут Дарина."
+       },
+       {
+        "n": 13,
+        "text": "Извините за долгое ожидание."
+       },
+       {
+        "n": 15,
+        "text": "Пожалуйста. Если понадобится что-то ещё, пишите. До свидания!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 4,
+     "system": 4,
+     "match": true,
+     "explanation": "После ответа клиента в #11 оператор молчал 634 с без предупреждения об ожидании. Из-за этой паузы клиенту пришлось переспросить «Вы здесь?» (#12), а извинение прозвучало только постфактум в #13. По R7 переспрос клиента из-за паузы даёт 4, хотя сами ответы оператора ясные. [Правило c06_timing] Первая реакция или пауза без предупреждения дольше порога — не выше 7 (R7) (max_unwarned_gap_s = 634 > 180): ответ модели 4 уже соответствует правилу.",
+     "guards": [
+      {
+       "id": "c06_timing",
+       "conditions": [
+        "max_unwarned_gap_s = 634 > 180"
+       ],
+       "before": 4,
+       "after": 4
+      }
+     ],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 12,
+        "text": "Вы здесь?"
+       },
+       {
+        "n": 13,
+        "text": "Извините за долгое ожидание."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Клиент подтвердил решение в #14. Оператор в #15 предложил дальнейшую помощь («Если понадобится что-то ещё, пишите») и попрощался («До свидания!»), что соответствует критерию.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 14,
+        "text": "Скачал, спасибо."
+       },
+       {
+        "n": 15,
+        "text": "Если понадобится что-то ещё, пишите. До свидания!"
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "explanation": "В репликах оператора #10, #13, #15 нет оскорблений и предложений платных услуг в обход компании. Конфиденциальные данные не раскрыты: в #13 дана только общая инструкция по скачиванию отчёта, без данных счёта. Пауза #11→#13 относится к другому критерию и грубой ошибкой не является.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 15
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "Пауза 01:41 → 12:15 без предупреждения, клиент спросил «Вы здесь?» (07:30). Оператор извинился, поэтому c05 = Да.",
+   "cached": false,
+   "cost": {
+    "calls": 8,
+    "tokens_in": 29181,
+    "tokens_out": 2231,
+    "usd": 0.088704,
+    "rejected_calls": 0
+   },
+   "status_reason": null,
+   "expected_status": "completed"
+  },
+  {
+   "conversation_id": "edge-ru-003",
+   "status": "completed",
+   "language": "RU",
+   "channel": "agent chat",
+   "total": 100.0,
+   "gold_total": 100.0,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "В первой реплике #10 оператор поздоровался на русском (язык клиента) и представился по имени, что соответствует R2.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, меня зовут Тимур."
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "explanation": "К подключению оператора запрос был полностью ясен из #1 и #5. Оператор не переспрашивал уже известное и сразу дал ответ по существу в #12. По R3 это случай N/A.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Данных для ответа хватало с самого начала: клиент до подключения оператора (#1, #5) чётко сформулировал запрос — справка о наличии брокерского счёта именно на английском языке; уточнений не требовалось."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "explanation": "Оператор в #12 лишь объяснил общий порядок заказа справки через приложение, не раскрывая данных счёта и не выполняя защищённых действий. Идентификация не требовалась, поэтому применимо условие N/A.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Запрос не требовал идентификации: клиент задал общий вопрос о возможности заказать справку на английском. Оператор дал общую инструкцию по приложению, данные счёта не раскрывались, защищённых действий не выполнялось."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": 20,
+     "match": true,
+     "explanation": "Клиент спрашивал о справке о наличии брокерского счёта на английском языке. В #12 оператор подтвердил такую возможность и дал точный путь в приложении с указанием выбрать язык English. В #13 клиент подтвердил, что нашёл нужное, поэтому вопрос закрыт полностью.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 12,
+        "text": "справку можно заказать на английском: «Меню → Поручения → Справки», в поручении выберите язык документа English"
+       },
+       {
+        "n": 13,
+        "text": "Нашёл, спасибо!"
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Клиент не выражал недовольства: в #5 он лишь уточнил запрос, а в #11 и #13 отвечал спокойно. Оператор вежлив во всех репликах: приветствие в #10, благодарность за ожидание в #12, пожелание хорошего дня в #14. Кроме того, он ответил на конкретную потребность клиента — справку на английском (#12).",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, меня зовут Тимур."
+       },
+       {
+        "n": 12,
+        "text": "Спасибо за ожидание."
+       },
+       {
+        "n": 14,
+        "text": "Пожалуйста. Хорошего дня!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 10,
+     "match": true,
+     "explanation": "Первая реакция 46 с — в пределах порога. Существенная пауза #11→#12 (515 с) заранее объявлена в #10, а в #12 оператор поблагодарил за ожидание. Ответ в #12 ясный и последовательный, клиент понял его без переспросов (#13).",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "это займёт несколько минут. Пожалуйста, ожидайте."
+       },
+       {
+        "n": 12,
+        "text": "Спасибо за ожидание."
+       },
+       {
+        "n": 12,
+        "text": "в поручении выберите язык документа English."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Клиент подтвердил, что решение найдено (#13). После этого оператор попрощался (#14 «Хорошего дня!»). По R8 прощание после подтверждения клиентом решения засчитывается как «Да».",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 13,
+        "text": "Нашёл, спасибо!"
+       },
+       {
+        "n": 14,
+        "text": "Пожалуйста. Хорошего дня!"
+       }
+      ],
+      "range": {
+       "from_n": 12,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "explanation": "В репликах оператора #10, #12, #14 нет оскорблений, предложений платных услуг в обход компании и раскрытия конфиденциальных данных: оператор дал лишь общую инструкцию по заказу справки без данных счёта.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "Пауза 8,5 мин предупреждена в 01:30 («это займёт несколько минут, ожидайте») → нарушения нет.",
+   "cached": false,
+   "cost": {
+    "calls": 8,
+    "tokens_in": 28917,
+    "tokens_out": 1713,
+    "usd": 0.077342,
+    "rejected_calls": 0
+   },
+   "status_reason": null,
+   "expected_status": "completed"
+  },
+  {
+   "conversation_id": "edge-kz-001",
+   "status": "completed",
+   "language": "KZ",
+   "channel": "agent chat",
+   "total": 84.62,
+   "gold_total": 84.62,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "explanation": "В первой реплике #10 оператор поздоровался и представился, но на русском языке, хотя клиент пишет на казахском (#1, #5, #7). По R2 приветствие не на языке клиента означает «Нет».",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте! Меня зовут Ержан."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 10
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "explanation": "Клиент до подключения оператора сообщил вопрос и устройство (#1) и отказался от варианта с отчётом (#5). Оператор учёл эти детали и сразу ответил по веб-версии (#10), ничего не переспрашивая. Данных хватало с самого начала, поэтому по R3 критерий неприменим.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "К подключению оператора (#9) данных для ответа хватало: в #1 клиент спросил, где посмотреть тариф, и указал устройство («Компьютердемін»), а в #5 отказался от брокерского отчёта. Уточнений не требовалось."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "explanation": "В #10 оператор лишь объяснил, где в интерфейсе найти тариф, и не назвал ни тариф клиента, ни другие данные счёта. Защищённых действий тоже не было, поэтому проверка личности не требовалась и критерий неприменим.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Запрос не требовал идентификации: клиент спросил, где в веб-версии посмотреть свой тариф, и оператор дал общую навигационную инструкцию без раскрытия данных счёта и без защищённых действий."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": 20,
+     "match": true,
+     "explanation": "Клиент спрашивал, где на компьютере посмотреть текущий тариф, без загрузки отчёта (#1, #5). В #10 оператор дал конкретный путь через веб-версию, и клиент подтвердил, что нашёл (#11). Язык ответа к этому критерию не относится.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "В веб-версии откройте вкладку «Кабинет», название тарифа указано под вашим ФИО."
+       },
+       {
+        "n": 11,
+        "text": "Көрдім, рақмет."
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Оператор вежлив (#10, #12). На неудобство клиента — нежелание скачивать отчёт (#5) — он отреагировал по существу: предложил способ увидеть тариф без отчёта, через вкладку «Кабинет» (#10). Явного недовольства без реакции и грубости нет.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте! Меня зовут Ержан."
+       },
+       {
+        "n": 10,
+        "text": "В веб-версии откройте вкладку «Кабинет», название тарифа указано под вашим ФИО."
+       },
+       {
+        "n": 12,
+        "text": "Оқасы жоқ. Сау болыңыз!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 10,
+     "match": true,
+     "explanation": "Первая реакция 43 с при пороге 180 с, пауз без предупреждения нет. Ответ в #10 ясный и пошаговый, клиент понял его без переспросов (#11). Русский язык ответа относится к критерию c01, а не к ясности.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "В веб-версии откройте вкладку «Кабинет», название тарифа указано под вашим ФИО."
+       },
+       {
+        "n": 11,
+        "text": "Көрдім, рақмет."
+       },
+       {
+        "n": 12,
+        "text": "Оқасы жоқ. Сау болыңыз!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Клиент в #11 подтвердил, что нашёл тариф, и поблагодарил. Оператор в #12 ответил на благодарность и попрощался на казахском. По R8 прощание после подтверждения решения клиентом засчитывается как «Да».",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 11,
+        "text": "Көрдім, рақмет."
+       },
+       {
+        "n": 12,
+        "text": "Оқасы жоқ. Сау болыңыз!"
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "explanation": "В репликах оператора #10 и #12 нет оскорблений и нет предложений платных услуг в обход компании. Конфиденциальная информация не раскрыта: в #10 оператор дал общую инструкцию, где посмотреть тариф, без данных счёта клиента. Ответ на русском при казахском языке клиента грубым нарушением по этому критерию не является.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "Клиент пишет на казахском, первое приветствие оператора на русском (01:22).",
+   "cached": false,
+   "cost": {
+    "calls": 8,
+    "tokens_in": 28725,
+    "tokens_out": 2488,
+    "usd": 0.097253,
+    "rejected_calls": 0
+   },
+   "status_reason": null,
+   "expected_status": "completed"
+  },
+  {
+   "conversation_id": "edge-ru-004",
+   "status": "completed",
+   "language": "RU",
+   "channel": "agent chat",
+   "total": 76.47,
+   "gold_total": 76.47,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "В первой реплике оператора #10 есть приветствие «Здравствуйте» и имя («меня зовут Олжас»), на русском языке — языке клиента. Нарушение идентификации в той же реплике оценивается по другому критерию.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, меня зовут Олжас."
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "explanation": "Клиент до эскалации описал ситуацию полностью (#1, #5). Оператор сразу нашёл перевод (#10) и не переспрашивал уже сказанное, а дополнительных уточнений не требовалось. Поэтому выполнено условие неприменимости.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "До подключения оператора клиент уже сообщил всё нужное (#1: вчерашнее пополнение с карты не зачислено; #5: нужна проверка платежа), так что данных для ответа хватало с самого начала."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "explanation": "Оператор раскрыл данные по счёту клиента (сумму и статус перевода) в #10, а идентификация подтверждена только в #13. Раскрытие произошло до подтверждения, поэтому по R4 — «Нет».",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Вижу ваш вчерашний перевод на 150 000 тенге, он пока в статусе обработки."
+       },
+       {
+        "n": 13,
+        "text": "Личность клиента подтверждена."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 13
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": 20,
+     "match": true,
+     "explanation": "Клиент просил проверить незачисленное пополнение (#1, #5). Оператор сообщил статус платежа (#10) и дал корректный следующий шаг — передачу специалистам с ответом в этот чат (#14); клиент его принял (#15). Раскрытие данных до идентификации относится к другому критерию (c03), а не к полноте консультации.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Вижу ваш вчерашний перевод на 150 000 тенге, он пока в статусе обработки."
+       },
+       {
+        "n": 14,
+        "text": "Я передал вопрос о зачислении специалистам, ответ придёт в этот чат."
+       },
+       {
+        "n": 15,
+        "text": "Хорошо."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 16
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Оператор вежлив на протяжении всего диалога. На неудобство клиента (деньги не видны) он отреагировал по существу: в #10 сообщил статус перевода, в #14 передал вопрос специалистам. На упрёк клиента в #11 оператор согласился и сразу начал идентификацию (#12). Раскрытие данных до идентификации относится к другим критериям.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Вижу ваш вчерашний перевод на 150 000 тенге, он пока в статусе обработки."
+       },
+       {
+        "n": 12,
+        "text": "Да, конечно, давайте пройдём идентификацию."
+       },
+       {
+        "n": 14,
+        "text": "Я передал вопрос о зачислении специалистам, ответ придёт в этот чат."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 16
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 10,
+     "match": true,
+     "explanation": "Первая реакция (45 с) в норме, пауз без предупреждения нет. Ответы оператора в #10, #12 и #14 ясные и связные, следующий шаг назван понятно. Вопрос клиента в #11 касается проверки личности, а не непонятной формулировки, поэтому переспросом из-за ответов оператора он не считается. Раскрытие данных до идентификации — нарушение по c03/c08, а не по управлению диалогом.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, меня зовут Олжас. Вижу ваш вчерашний перевод на 150 000 тенге, он пока в статусе обработки."
+       },
+       {
+        "n": 12,
+        "text": "Да, конечно, давайте пройдём идентификацию."
+       },
+       {
+        "n": 14,
+        "text": "Я передал вопрос о зачислении специалистам, ответ придёт в этот чат."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 16
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "В #14 оператор обозначил следующий шаг (вопрос передан специалистам, ответ придёт в чат). После подтверждения клиента в #15 оператор попрощался в #16. По R8 «итог или следующий шаг плюс прощание» означает «Да».",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 14,
+        "text": "Я передал вопрос о зачислении специалистам, ответ придёт в этот чат."
+       },
+       {
+        "n": 16,
+        "text": "Спасибо за обращение. До свидания!"
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "В #10 оператор раскрыл сумму и статус перевода по счёту клиента до идентификации, которая подтверждена только в #13. По R9 раскрытие данных счёта без идентификации — грубое нарушение (конфиденциальная информация).",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Вижу ваш вчерашний перевод на 150 000 тенге, он пока в статусе обработки."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 16
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "Сумма и статус перевода раскрыты в 01:35, идентификация только в 02:51. Флаг: раскрытие конфиденциальной информации.",
+   "cached": false,
+   "cost": {
+    "calls": 8,
+    "tokens_in": 29109,
+    "tokens_out": 2861,
+    "usd": 0.10103,
+    "rejected_calls": 0
+   },
+   "status_reason": null,
+   "expected_status": "completed"
+  },
+  {
+   "conversation_id": "edge-ru-005",
+   "status": "not_evaluable",
+   "language": "RU",
+   "channel": "agent chat",
+   "total": null,
+   "gold_total": null,
+   "criteria": [],
+   "uncertain": [],
+   "notes": "Оператор не подключился. Система не вызывает LLM, ставит статус «не оценивается: нет реплик оператора», итог = null. Наше правило — подтвердить у организаторов.",
+   "cached": false,
+   "cost": {
+    "calls": 0,
+    "tokens_in": 0,
+    "tokens_out": 0,
+    "usd": 0,
+    "rejected_calls": 0
+   },
+   "status_reason": "Нет реплик оператора",
+   "expected_status": "not_evaluable"
+  },
+  {
+   "conversation_id": "edge-en-001",
+   "status": "completed",
+   "language": "EN",
+   "channel": "agent chat",
+   "total": 70.0,
+   "gold_total": 76.92,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "В первой реплике #10 оператор поздоровался на английском — языке клиента («Hi») — и представился по имени («I'm Ryan»). Это соответствует R2.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Hi, I'm Ryan."
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "explanation": "By the time the operator connected (#9), the need was fully stated in #1 and #5. The operator did not re-ask anything already said and answered with the navigation path in #10. The later difficulty (#11) came from the client not finding the button, not from missing information, so N/A applies.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Before the operator joined, the client had already said what they needed (transfer details to fund the account, #1) and that they could not find them in the app (#5). Nothing more had to be clarified to answer."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "explanation": "В #10 оператор лишь объяснил путь в меню приложения. В #12 и #14 персональные данные или данные счёта также не раскрывались, поэтому проверка личности не требовалась и критерий неприменим.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Клиент спрашивал, где в приложении найти реквизиты для пополнения. Это общий навигационный вопрос, оператор не раскрывал данные счёта и не выполнял защищённых действий, поэтому идентификация не требовалась."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": 20,
+     "match": true,
+     "explanation": "Клиент спросил, где найти реквизиты для пополнения счёта. В #10 оператор дал точный путь (Menu → Add Funds → bank transfer details), в #12 уточнил, что раздел находится в главном меню. В #13 клиент подтвердил, что нашёл раздел, значит запрос закрыт корректно; грубость оценивается по другому критерию.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Open Menu, then Add Funds, then the bank transfer details option."
+       },
+       {
+        "n": 12,
+        "text": "It's right on the main menu."
+       },
+       {
+        "n": 13,
+        "text": "Found it now."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "explanation": "В #12 оператор оскорбил клиента («Are you blind?»), что по R6 автоматически даёт «Нет». После жалобы клиента в #13 («That's rude») оператор не извинился и не отреагировал на недовольство (#14).",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 12,
+        "text": "Seriously? It's right on the main menu. Are you blind?"
+       },
+       {
+        "n": 13,
+        "text": "That's rude. Found it now."
+       },
+       {
+        "n": 14,
+        "text": "Okay. Have a good day."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 7,
+     "match": false,
+     "explanation": "Первая реакция (38 с) в норме, пауз без предупреждения нет, инструкция в #10 ясная и последовательная. Однако на повторное затруднение клиента (#11) оператор в #12 ответил несодержательно и непрофессионально, без пошагового уточнения. Это один заметный сбой, но клиент смог продолжить и нашёл раздел (#13).",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Open Menu, then Add Funds, then the bank transfer details option."
+       },
+       {
+        "n": 11,
+        "text": "I still don't see Add Funds."
+       },
+       {
+        "n": 12,
+        "text": "Seriously? It's right on the main menu. Are you blind?"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 1,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Клиент подтвердил, что нашёл нужный раздел (#13). После этого оператор попрощался «Have a good day» (#14), а по R8 прощание после подтверждения решения засчитывается как «Да». Грубость оператора в #12 относится к другому критерию.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 13,
+        "text": "Found it now."
+       },
+       {
+        "n": 14,
+        "text": "Okay. Have a good day."
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "В #12 оператор оскорбил клиента («Seriously? It's right on the main menu. Are you blind?»), клиент отметил грубость в #13. Это оскорбление клиента, то есть грубое нарушение по критерию c08.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 12,
+        "text": "Are you blind?"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "02:02 «Are you blind?» — оскорбление клиента; жалоба 02:20 проигнорирована.",
+   "cached": false,
+   "cost": {
+    "calls": 8,
+    "tokens_in": 27325,
+    "tokens_out": 2767,
+    "usd": 0.092372,
+    "rejected_calls": 0
+   },
+   "status_reason": null,
+   "expected_status": "completed"
+  },
+  {
+   "conversation_id": "edge-kz-002",
+   "status": "completed",
+   "language": "KZ",
+   "channel": "agent chat",
+   "total": 52.94,
+   "gold_total": 52.94,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "В первой реплике #10 оператор поздоровался на казахском — языке клиента («Сәлеметсіз бе») — и назвал своё имя («мен Нұрсұлтанмын»), что соответствует R2.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Сәлеметсіз бе, мен Нұрсұлтанмын."
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "explanation": "Потребность клиента была полностью ясна из #1, поэтому по R3 уточнять было нечего. Оператор не переспрашивал уже сказанное (#10, #12). Корректность раскрытия данных третьего лица оценивается по другим критериям (c03/c08), а не по выявлению потребности.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Данных для ответа хватало с самого начала: в #1 клиент сообщил боту, что хочет узнать остаток на счёте супруга, и оператор видел это сообщение до подключения."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "explanation": "Идентификация клиента подтверждена системой в #11 до ответа, однако в #12 оператор раскрыл остаток на счёте супруги — третьего лица, чья личность не проверялась. По R4 раскрытие данных третьего лица — «Нет».",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Алдымен жеке басыңызды растайық."
+       },
+       {
+        "n": 12,
+        "text": "Жұбайыңыз Әлия Серікқызының шотында қазір 2 400 000 теңге бар."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": true,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 0,
+     "system": 0,
+     "match": true,
+     "explanation": "Клиент запросил остаток на счёте супруги, то есть данные третьего лица (#1). Корректным ответом был бы отказ с объяснением, что информация предоставляется только владельцу счёта, и рекомендация супруге обратиться самой. Вместо этого оператор в #12 раскрыл баланс чужого счёта, поэтому ключевой ответ ошибочен.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 1,
+        "text": "Жұбайымның шотындағы қалдықты білгім келеді."
+       },
+       {
+        "n": 12,
+        "text": "Жұбайыңыз Әлия Серікқызының шотында қазір 2 400 000 теңге бар."
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Клиент недовольства или неудобства не выражал (#1, #13), поэтому по R6 достаточно вежливости. Оператор вежлив: здоровается (#10), благодарит (#12) и прощается (#14). Раскрытие данных третьего лица в #12 оценивается по c03/c08, а не по этому критерию.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Сәлеметсіз бе, мен Нұрсұлтанмын."
+       },
+       {
+        "n": 12,
+        "text": "Рақмет."
+       },
+       {
+        "n": 14,
+        "text": "Оқасы жоқ. Сау болыңыз!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 10,
+     "match": true,
+     "explanation": "Первая реакция 45 с (в пределах порога 180 с), существенных пауз без предупреждения нет. Реплики оператора #10, #12, #14 ясные, последовательные и грамотные, клиент ничего не переспрашивал (#13 «Жақсы, рақмет»). Раскрытие данных третьего лица (супруги) — нарушение по другим критериям (c03/c08), а не по ясности и управлению диалогом, поэтому здесь ставится 10.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Сәлеметсіз бе, мен Нұрсұлтанмын. Алдымен жеке басыңызды растайық."
+       },
+       {
+        "n": 12,
+        "text": "Жұбайыңыз Әлия Серікқызының шотында қазір 2 400 000 теңге бар."
+       },
+       {
+        "n": 14,
+        "text": "Оқасы жоқ. Сау болыңыз!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "В #13 клиент подтвердил, что вопрос решён («Жақсы, рақмет»). В #14 оператор попрощался («Сау болыңыз!»). По R8 прощание после подтверждения клиентом решения засчитывается как «Да». Раскрытие данных третьего лица в #12 оценивается по другим критериям, а не по c07.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 13,
+        "text": "Жақсы, рақмет."
+       },
+       {
+        "n": 14,
+        "text": "Оқасы жоқ. Сау болыңыз!"
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "В #12 оператор сообщил клиенту остаток на счёте супруги (третьего лица) с её именем. Идентификация в #11 подтвердила только личность самого клиента, поэтому это раскрытие конфиденциальной информации третьего лица (R9).",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 12,
+        "text": "Жұбайыңыз Әлия Серікқызының шотында қазір 2 400 000 теңге бар."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [
+    "c03"
+   ],
+   "notes": "Клиент подтвердил свою личность, но оператор в 02:15 раскрыл баланс третьего лица (супруги). Правильный ответ — отказать.",
+   "cached": false,
+   "cost": {
+    "calls": 8,
+    "tokens_in": 29141,
+    "tokens_out": 2346,
+    "usd": 0.085461,
+    "rejected_calls": 0
+   },
+   "status_reason": null,
+   "expected_status": "completed"
+  },
+  {
+   "conversation_id": "edge-ru-006",
+   "status": "completed",
+   "language": "RU",
+   "channel": "agent chat",
+   "total": 76.92,
+   "gold_total": 76.92,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "В первой реплике оператора #10 есть приветствие «Здравствуйте» на русском языке (язык клиента) и имя «я Карина», поэтому контакт установлен по R2.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, я Карина."
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "explanation": "К моменту подключения (#9) потребность была полностью ясна из сообщений клиента боту (#1, #5). Оператор не стал переспрашивать и сразу дал точный путь к реквизитам в USD (#10). Уточнять было нечего, поэтому по R3 критерий неприменим.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Данных для ответа хватало с самого начала: клиент до подключения оператора сообщил, что ищет реквизиты в долларах для пополнения счёта (#1) и что уже искал их в приложении (#5)."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "explanation": "В #10 оператор лишь объяснил путь в меню приложения, а в #12 попрощался. Персональные данные или данные счёта не раскрывались, защищённые действия не выполнялись, поэтому идентификация не требовалась и критерий неприменим.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Запрос не требовал идентификации: клиент спрашивал, где найти реквизиты в долларах. Оператор дал общую инструкцию по навигации в приложении, не раскрывал данных счёта и не выполнял защищённых действий."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": 20,
+     "match": true,
+     "explanation": "Клиент спрашивал, где найти реквизиты в долларах (#1). Оператор дал конкретный путь в приложении с выбором валюты USD (#10), клиент подтвердил, что нашёл (#11). Вопрос закрыт полностью.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Откройте «Меню → Пополнить → Перевод по реквизитам» и выберите валюту USD."
+       },
+       {
+        "n": 11,
+        "text": "Нашёл."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "explanation": "Ещё до подключения оператора клиент выразил явное недовольство (#1 «уже надоело», #5 «Я уже искал»). В #10 оператор сразу дал инструкцию и никак не отреагировал на это недовольство: нет ни признания неудобства, ни извинения. По R6 при выраженном недовольстве без реакции ставится «Нет».",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 1,
+        "text": "Второй день не могу нормально пополнить счёт, уже надоело!"
+       },
+       {
+        "n": 10,
+        "text": "Здравствуйте, я Карина. Откройте «Меню → Пополнить → Перевод по реквизитам»"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 10,
+     "match": true,
+     "explanation": "Первая реакция 42 с при пороге 180 с, пауз без предупреждения нет. Ответ в #10 ясный и пошаговый, клиент сразу нашёл реквизиты (#11) без переспросов. Сбоев в порядке и связности ответов нет.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Откройте «Меню → Пополнить → Перевод по реквизитам» и выберите валюту USD."
+       },
+       {
+        "n": 12,
+        "text": "Хорошего дня!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Клиент подтвердил, что нашёл реквизиты (#11), после чего оператор попрощался (#12). По трактовке R8 прощание после подтверждения решения клиентом засчитывается как «Да».",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 11,
+        "text": "Нашёл."
+       },
+       {
+        "n": 12,
+        "text": "Хорошего дня!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "explanation": "В репликах оператора #10 и #12 нет оскорблений и предложений платных услуг в обход компании. Конфиденциальные данные счёта также не раскрывались: в #10 дана только общая инструкция по навигации в приложении, поэтому отсутствие идентификации здесь не нарушение.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "Клиент выразил недовольство («второй день... уже надоело»), оператор никак на это не отреагировал.",
+   "cached": false,
+   "cost": {
+    "calls": 8,
+    "tokens_in": 27765,
+    "tokens_out": 1784,
+    "usd": 0.069819,
+    "rejected_calls": 0
+   },
+   "status_reason": null,
+   "expected_status": "completed"
+  },
+  {
+   "conversation_id": "edge-kz-003",
+   "status": "completed",
+   "language": "KZ",
+   "channel": "voice call",
+   "total": 100.0,
+   "gold_total": 100.0,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "В первой реплике #7 после подключения (#6) оператор поздоровался на казахском языке клиента («Сәлеметсіз бе») и представился по имени («менің атым Айгерім»).",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 7,
+        "text": "Сәлеметсіз бе, Freedom Broker, менің атым Айгерім."
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "В #8 клиент сообщил лишь, что вчера подал заявку на акцию и она не исполнена. Этих данных было недостаточно, поэтому N/A не применим. В #9 оператор уточнил недостающее (какая акция и какой рынок) и не переспрашивал уже сказанное, а ответ в #18 дал после уточнения и проверки.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 9,
+        "text": "Қай акция бойынша және қай нарықта өтінім бердіңіз?"
+       }
+      ],
+      "range": {
+       "from_n": 7,
+       "to_n": 18
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Запрос о статусе заявки клиента требовал идентификации; оператор запросил SMS-код в #11 и словесно подтвердил идентификацию в #13. Данные по заявке раскрыты только в #18, то есть после подтверждения.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 11,
+        "text": "Өтінімді тексеру үшін жеке басыңызды растау керек."
+       },
+       {
+        "n": 13,
+        "text": "Рақмет, сәйкестендіру сәтті өтті."
+       },
+       {
+        "n": 18,
+        "text": "Өтініміңіз лимиттік баға бойынша берілген"
+       }
+      ],
+      "range": {
+       "from_n": 7,
+       "to_n": 22
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": 20,
+     "match": true,
+     "explanation": "Клиент спросил, почему не исполнена заявка на Apple (#8). В #18 оператор объяснил причину: лимитная цена ниже рыночной. Он также дал корректный следующий шаг: изменить цену или подать рыночную заявку. Клиент подтвердил понимание (#19), других вопросов не осталось (#21).",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 18,
+        "text": "Өтініміңіз лимиттік баға бойынша берілген, қазіргі нарықтық баға одан жоғары, сондықтан әлі орындалмаған."
+       },
+       {
+        "n": 18,
+        "text": "Бағаны өзгертсеңіз немесе нарықтық өтінім берсеңіз, орындалады."
+       },
+       {
+        "n": 19,
+        "text": "Түсіндім, бағасын өзгертемін. Рақмет."
+       }
+      ],
+      "range": {
+       "from_n": 7,
+       "to_n": 22
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Клиент описал неудобство (заявка не исполнена, #8). Оператор отреагировал на конкретную проблему: уточнил детали (#9), проверил заявку и объяснил причину и решение (#18). Во всех репликах оператор вежлив: благодарит за ожидание (#18) и вежливо прощается (#22).",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 9,
+        "text": "Түсіндім. Қай акция бойынша және қай нарықта өтінім бердіңіз?"
+       },
+       {
+        "n": 18,
+        "text": "Күткеніңізге рақмет."
+       },
+       {
+        "n": 22,
+        "text": "Онда сау болыңыз, күніңіз сәтті өтсін!"
+       }
+      ],
+      "range": {
+       "from_n": 7,
+       "to_n": 22
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 10,
+     "match": true,
+     "explanation": "Первая реакция 3 с, необъявленных пауз нет. Удержание 246 с длилось дольше обещанных «екі-үш минут», но было объявлено в #14, и в #18 оператор поблагодарил за ожидание, поэтому по R7 это не нарушение. Ответ в #18 ясный и связный, клиент понял его без переспросов (#19).",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 14,
+        "text": "екі-үш минут желіде күте тұрыңызшы"
+       },
+       {
+        "n": 18,
+        "text": "Күткеніңізге рақмет."
+       },
+       {
+        "n": 19,
+        "text": "Түсіндім, бағасын өзгертемін."
+       }
+      ],
+      "range": {
+       "from_n": 7,
+       "to_n": 22
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Клиент подтвердил решение в #19. Оператор предложил дальнейшую помощь в #20 и попрощался в #22 до завершения звонка клиентом в #23.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 20,
+        "text": "Басқа сұрағыңыз бар ма?"
+       },
+       {
+        "n": 22,
+        "text": "Онда сау болыңыз, күніңіз сәтті өтсін!"
+       }
+      ],
+      "range": {
+       "from_n": 18,
+       "to_n": 23
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "explanation": "В репликах оператора #7–#22 нет оскорблений и предложений платных услуг в обход компании. Данные по заявке (#18) раскрыты только после подтверждения идентификации по SMS-коду в #13, данных третьих лиц нет.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 7,
+       "to_n": 22
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "Звонок на казахском, ISO-время, словесная идентификация по SMS (10:01:36) до раскрытия данных. Удержание 4 мин объявлено — не пауза. audio_url = null — интерфейс не должен падать.",
+   "cached": false,
+   "cost": {
+    "calls": 8,
+    "tokens_in": 34125,
+    "tokens_out": 1786,
+    "usd": 0.089232,
+    "rejected_calls": 0
+   },
+   "status_reason": null,
+   "expected_status": "completed"
+  },
+  {
+   "conversation_id": "edge-kz-004",
+   "status": "completed",
+   "language": "KZ",
+   "channel": "agent chat",
+   "total": 100.0,
+   "gold_total": 100.0,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "В первой реплике #10 оператор поздоровался на казахском языке, совпадающем с языком клиента («Сәлеметсіз бе»), и назвал своё имя («мен Ләйлә»). Требования R2 выполнены.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Сәлеметсіз бе, мен Ләйлә."
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "explanation": "В #1 клиент уже сообщил все нужные детали: тип документа, период и способ получения. Уточнений не требовалось, и оператор в #10 сразу дал ответ с учётом этих деталей. По R3 это условие неприменимости, поэтому N/A.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Данных для ответа хватало с самого начала: в #1 клиент указал, что ему нужен брокерский отчёт за прошлый месяц, и спросил, как его скачать."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "explanation": "В #10 оператор лишь объяснил путь в приложении для самостоятельного скачивания отчёта. Данные счёта не раскрывались, защищённые действия не выполнялись (#10–#12), значит запрос не требовал идентификации.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Клиент задал общий вопрос, как скачать брокерский отчёт в приложении; оператор дал только навигационную инструкцию, данные счёта не раскрывал и защищённых действий не выполнял, поэтому идентификация не требовалась."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": 20,
+     "match": true,
+     "explanation": "Клиент просил скачать брокерский отчёт за прошлый месяц (#1). Оператор в #10 дал полный пошаговый путь в приложении с выбором периода, клиент подтвердил успех в #11 — запрос закрыт полностью.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "«Меню → Отчёты и документы → Отчёт брокера» бөлімін ашып, өткен айдың басы мен соңын таңдаңыз да, есепті жүктеңіз"
+       },
+       {
+        "n": 11,
+        "text": "Получилось, рақмет!"
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Клиент сказал боту, что не понял инструкцию (#5). Оператор вежливо поздоровался и дал более подробный пошаговый путь (#10), то есть отреагировал на конкретное неудобство. Диалог он завершил вежливо (#12), грубости не было.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Сәлеметсіз бе, мен Ләйлә."
+       },
+       {
+        "n": 10,
+        "text": "«Меню → Отчёты и документы → Отчёт брокера» бөлімін ашып"
+       },
+       {
+        "n": 12,
+        "text": "Оқасы жоқ. Сау болыңыз!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 10,
+     "match": true,
+     "explanation": "Первая реакция 36 с при пороге 180 с, пауз без предупреждения нет. Ответ в #10 ясный и пошаговый, клиент сразу выполнил инструкцию (#11) без переспрашиваний.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Қосымшада «Меню → Отчёты и документы → Отчёт брокера» бөлімін ашып"
+       },
+       {
+        "n": 11,
+        "text": "Получилось, рақмет!"
+       },
+       {
+        "n": 12,
+        "text": "Оқасы жоқ. Сау болыңыз!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Клиент в #11 подтвердил, что проблема решена, после чего оператор в #12 ответил на благодарность и попрощался. По R8 прощание после подтверждения решения клиентом засчитывается как «Да».",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 11,
+        "text": "Получилось, рақмет!"
+       },
+       {
+        "n": 12,
+        "text": "Оқасы жоқ. Сау болыңыз!"
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "explanation": "В репликах оператора #10 и #12 нет оскорблений и нет предложений платных услуг в обход компании. Конфиденциальные данные не раскрыты: в #10 дана только общая инструкция по выгрузке отчёта в приложении, без данных счёта, поэтому идентификация не требовалась.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 12
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "Клиент смешивает казахский и русский; основной язык казахский, оператор ответил на казахском.",
+   "cached": false,
+   "cost": {
+    "calls": 8,
+    "tokens_in": 29077,
+    "tokens_out": 1890,
+    "usd": 0.08149,
+    "rejected_calls": 0
+   },
+   "status_reason": null,
+   "expected_status": "completed"
+  },
+  {
+   "conversation_id": "edge-ru-007",
+   "status": "completed",
+   "language": "RU",
+   "channel": "agent chat",
+   "total": 75.0,
+   "gold_total": 87.5,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "В первой реплике оператора #10 есть приветствие «Здравствуйте» и имя «меня зовут Максим». Реплика написана на русском, то есть на языке клиента, поэтому критерий выполнен.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, меня зовут Максим."
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "В #1 клиент указал два вопроса, но суть вопроса по D-счёту не раскрыл. Оператор в #10 учёл известную деталь: сразу ответил про отчёт, не переспрашивая. Недостающее он уточнил вопросом «Какой у вас вопрос по D-счёту?» до ответа по нему, поэтому N/A неприменим, а критерий выполнен.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Какой у вас вопрос по D-счёту?"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "explanation": "Оператор в #10 дал общую инструкцию по пути к отчёту, в #12 ответил на общий вопрос о правилах D-счёта; конкретные данные счёта клиента не раскрывались и защищённых действий не было, поэтому идентификация не требовалась.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Запросы клиента общие (где скачать отчёт брокера, можно ли покупать акции с D-счёта) — данные счёта не раскрывались и защищённых действий не выполнялось, идентификация не требовалась."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 10,
+     "system": 0,
+     "match": false,
+     "explanation": "Первый вопрос об отчёте брокера закрыт корректно (#10), и клиент подтвердил, что скачал отчёт (#11). Однако по второму вопросу оператор в #12 уверенно дал ошибочную рекомендацию: покупка акций идёт с брокерского счёта, средства с D-счёта нужно предварительно перевести. Ключевая рекомендация, на основании которой клиент будет действовать, неверна и в диалоге не исправлена, поэтому выбрана ступень 0.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Отчёт: «Меню → Отчёты и документы → Отчёт брокера», выберите период и скачайте."
+       },
+       {
+        "n": 12,
+        "text": "Да, конечно, покупайте прямо с D-счёта, переводить ничего не нужно."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": true,
+     "step_error": 2,
+     "cause": "трактовка или пропущенная реплика"
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Клиент не выражал недовольства и не описывал неудобств (#1, #11, #13), поэтому по R6 достаточно вежливости. Оператор вежлив: поприветствовал (#10), ответил на вопросы и вежливо попрощался (#14). Возможная фактическая неточность ответа в #12 относится к критерию корректности (c04), а не к эмпатии.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, меня зовут Максим."
+       },
+       {
+        "n": 14,
+        "text": "Пожалуйста. До свидания!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 10,
+     "match": true,
+     "explanation": "Первая реакция 42 с при пороге 180 с, пауз без предупреждения нет. Ответы в #10, #12 и #14 ясные и последовательные: оператор сначала закрыл первый вопрос, затем уточнил второй. Клиент ничего не переспрашивал. Возможная фактическая неточность ответа о D-счёте относится к критерию корректности, а не к управлению диалогом.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, меня зовут Максим. Отчёт: «Меню → Отчёты и документы → Отчёт брокера»"
+       },
+       {
+        "n": 12,
+        "text": "Да, конечно, покупайте прямо с D-счёта, переводить ничего не нужно."
+       },
+       {
+        "n": 14,
+        "text": "Пожалуйста. До свидания!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "explanation": "Клиент подтвердил, что вопрос решён (#13). Оператор после этого попрощался (#14). По трактовке R8 прощание после подтверждения решения клиентом засчитывается как «Да».",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 13,
+        "text": "Понял, спасибо."
+       },
+       {
+        "n": 14,
+        "text": "Пожалуйста. До свидания!"
+       }
+      ],
+      "range": null,
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "explanation": "В репликах оператора #10, #12, #14 нет оскорблений и нет предложений платных услуг в обход компании. Данные счёта клиента не раскрывались: в #12 дан общий ответ о возможности покупки с D-счёта. Возможная фактическая неточность этого ответа относится к критерию полноты и корректности, а не к грубым нарушениям.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [
+    "c04"
+   ],
+   "notes": "Первый вопрос решён верно, на второй (02:05) дан ошибочный ответ: средства D-счёта нельзя использовать напрямую для покупки (см. ru-024, en-010 в DEV).",
+   "cached": false,
+   "cost": {
+    "calls": 8,
+    "tokens_in": 28613,
+    "tokens_out": 2630,
+    "usd": 0.094526,
+    "rejected_calls": 0
+   },
+   "status_reason": null,
+   "expected_status": "completed"
+  }
+ ],
+ "edge": [
+  {
+   "conversation_id": "edge-ru-001",
+   "target": [
+    "c06"
+   ],
+   "passed": true,
+   "all_criteria_match": true,
+   "problems": []
+  },
+  {
+   "conversation_id": "edge-ru-002",
+   "target": [
+    "c06"
+   ],
+   "passed": true,
+   "all_criteria_match": true,
+   "problems": []
+  },
+  {
+   "conversation_id": "edge-ru-003",
+   "target": [
+    "c06"
+   ],
+   "passed": true,
+   "all_criteria_match": true,
+   "problems": []
+  },
+  {
+   "conversation_id": "edge-kz-001",
+   "target": [
+    "c01"
+   ],
+   "passed": true,
+   "all_criteria_match": true,
+   "problems": []
+  },
+  {
+   "conversation_id": "edge-ru-004",
+   "target": [
+    "c03",
+    "c08"
+   ],
+   "passed": true,
+   "all_criteria_match": true,
+   "problems": []
+  },
+  {
+   "conversation_id": "edge-ru-005",
+   "target": [
+    "system"
+   ],
+   "passed": true,
+   "all_criteria_match": true,
+   "problems": []
+  },
+  {
+   "conversation_id": "edge-en-001",
+   "target": [
+    "c05",
+    "c08"
+   ],
+   "passed": true,
+   "all_criteria_match": false,
+   "problems": []
+  },
+  {
+   "conversation_id": "edge-kz-002",
+   "target": [
+    "c03",
+    "c04",
+    "c08"
+   ],
+   "passed": true,
+   "all_criteria_match": true,
+   "problems": []
+  },
+  {
+   "conversation_id": "edge-ru-006",
+   "target": [
+    "c05"
+   ],
+   "passed": true,
+   "all_criteria_match": true,
+   "problems": []
+  },
+  {
+   "conversation_id": "edge-kz-003",
+   "target": [
+    "parsing",
+    "c03",
+    "c06"
+   ],
+   "passed": true,
+   "all_criteria_match": true,
+   "problems": []
+  },
+  {
+   "conversation_id": "edge-kz-004",
+   "target": [
+    "language"
+   ],
+   "passed": true,
+   "all_criteria_match": true,
+   "problems": []
+  },
+  {
+   "conversation_id": "edge-ru-007",
+   "target": [
+    "c04"
+   ],
+   "passed": false,
+   "all_criteria_match": false,
+   "problems": [
+    "c04: 0 ≠ 10"
+   ]
+  }
+ ]
+}

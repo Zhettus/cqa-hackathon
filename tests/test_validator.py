@@ -92,3 +92,10 @@ def test_bad_shape(pre):
     del r["reasoning"]
     assert codes(validate_response(CL["c01"], r, pre)) == ["bad_shape"]
     assert codes(validate_response(CL["c01"], resp(reasoning="  "), pre)) == ["bad_shape"]
+
+
+def test_reasoning_must_be_russian(pre):
+    en = "The operator greeted the client and introduced himself in #10."
+    assert codes(validate_response(CL["c01"], resp(reasoning=en), pre)) == ["reasoning_language"]
+    ok = "Оператор ответил «Hi, I'm Tyler. I can see a withdrawal restriction on your account» в #11."
+    assert validate_response(CL["c01"], resp(reasoning=ok), pre) == []

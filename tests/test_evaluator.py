@@ -156,6 +156,7 @@ def test_aggregate_votes(ctype, answers, final, conf):
 def test_prompt_built_from_config(edge_records, dev_records, checklist_v1):
     sys_chat = build_system("agent chat")
     assert "R7." in sys_chat and "R11." in sys_chat and "Правила для звонков" not in sys_chat
+    assert "ровно в одном критерии" in sys_chat
     assert "Ошибки распознавания не считаются ошибками" in build_system("voice call")
 
     pre = preprocess(edge_records["edge-ru-002"], checklist_v1["settings"])
@@ -175,6 +176,10 @@ def test_prompt_built_from_config(edge_records, dev_records, checklist_v1):
     assert "Корректная и полная консультация" in block and "15 — Основной вопрос решён" in block
     assert "Чат закончился до того" in block
     assert "N/A НЕ разрешён" in build_criterion_block(crit["c01"])
+    others = [c for c in checklist_v1["criteria"] if c["id"] != "c06"]
+    b06 = build_criterion_block(crit["c06"], others=others)
+    assert "ДРУГИЕ КРИТЕРИИ ЧЕК-ЛИСТА" in b06 and "Корректная и полная консультация:" in b06
+    assert "Управление диалогом, скорость и грамотность:" not in b06
     new = {"id": "c99", "title": "Новый критерий", "type": "scale", "weight": 3, "na_allowed": False,
            "description": "Описание нового", "scale": [{"value": 0, "description": "плохо"}, {"value": 3, "description": "хорошо"}]}
     assert "КРИТЕРИЙ c99: Новый критерий" in build_criterion_block(new) and "3 — хорошо" in build_criterion_block(new)
