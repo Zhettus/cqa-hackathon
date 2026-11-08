@@ -8,7 +8,7 @@
 | Параметр | Значение |
 |---|---|
 | модель / effort | `claude-opus-5-5` / `high` (`meta.llm`) |
-| версия промпта | **`v1-4ed6b8ce74`** (`meta.prompt_version`; иначе — кто-то менял `backend/prompt.py` или `docs/rules.md`) |
+| версия промпта | **`v1-519e55c3c0`** (`meta.prompt_version`; иначе — кто-то менял `backend/prompt.py` или `docs/rules.md`) |
 | чек-лист | **`chat-quality` v1** (`meta.checklists == [{"id":"chat-quality","version":1}]`); кандидат v2 со справочником не активирован — см. `backend/checklists/candidates/README.md` |
 | голоса | **5** (`meta.votes`) |
 | нормализация звонков в оценке | **выключена** (`meta.normalize_calls == false`) |
