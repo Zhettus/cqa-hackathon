@@ -26,6 +26,7 @@ from backend.appeals import apply_final_totals, final_result
 from backend.checklist import validate_checklist
 from backend.config import ROOT, get_settings
 from backend.evaluator import Evaluator, default_votes
+from backend.export_results import export_group
 from backend.llm import DEFAULT_MODELS, LLMError, get_provider
 from backend.normalize import normalize_call, normalizer_version, text_hash
 from backend.preprocess import preprocess
@@ -525,6 +526,21 @@ async def results(group_id: str | None = None, batch_id: str | None = None, chec
                           "criteria": [{"id": c["id"], "title": c.get("title", ""), "type": c["type"]}
                                        for c in cl["criteria"]]},
             "items": items, "summary": summary, "total": len(items)}
+
+
+# --- 6а. экспорт для сдачи организаторам (results.json) ------------------------------------------------
+@router.get("/api/export")
+async def export_results(group_id: str, checklist_id: str = "chat-quality", checklist_version: int | None = None,
+                         team_name: str | None = None, conn: sqlite3.Connection = Conn):
+    """Документ формата организаторов: автоматическая оценка (без апелляций) по версии чек-листа
+    (по умолчанию последней). То же, что scripts/export_results.py; отдаётся как файл results.json."""
+    try:
+        doc = export_group(conn, group_id, checklist_id=checklist_id, checklist_version=checklist_version,
+                           team_name=team_name)
+    except ValueError as e:
+        raise ApiError(422, "export_mapping", str(e))
+    return Response(json.dumps(doc, ensure_ascii=False, indent=2) + "\n", media_type="application/json; charset=utf-8",
+                    headers={"Content-Disposition": 'attachment; filename="results.json"'})
 
 
 # --- 7. апелляции: open → in_review → confirmed | changed; журнал событий; final через scoring ----------

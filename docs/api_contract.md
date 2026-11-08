@@ -329,6 +329,23 @@ JSON в UTF-8, время — ISO 8601 UTC. Фронтенд (`frontend/`) ра�
 
 ---
 
+### `GET /api/export?group_id=DEV[&checklist_version=1][&team_name=…]`
+Файл `results.json` в формате сдачи организаторов (`Content-Disposition: attachment`): автоматическая оценка
+(без решений по апелляциям) каждого диалога набора по указанной версии чек-листа (по умолчанию последней).
+То же делает `scripts/export_results.py`; коды критериев и допустимые значения — `config/export_mapping.json`.
+```json
+{ "schema_version": "1.0", "team_name": "…", "model": { "mode": "external_api", "name": "gemini-3.8-flash" },
+  "results": [ { "conversation_id": "p1-ru-001", "status": "ok",
+                 "criteria": [ { "criterion_id": "contact", "value": true, "rationale": "…", "evidence_turns": [10] } ],
+                 "score": { "final_score": 100.0, "critical_flag": false } },
+               { "conversation_id": "p1-ru-009", "status": "error", "criteria": [], "score": null,
+                 "error": "В диалоге нет реплик оператора" } ] }
+```
+`evidence_turns` — номера реплик с 1 по исходному массиву `transcript` (совпадают с `n`). 422 `export_mapping`,
+если у критерия чек-листа нет кода в `config/export_mapping.json`; 404, если набор не загружен.
+
+---
+
 ## 7. Апелляции и решения
 
 Апелляция привязана к оценке и критерию. На пару (оценка, критерий) — одна

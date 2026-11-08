@@ -15,8 +15,10 @@ p4-ru-002 (приглушённые реплики на удержании и п
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
+from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
@@ -55,6 +57,13 @@ def main() -> int:
         page.fill("#gid", "EDGE"); page.click("#load")
         page.wait_for_function("document.querySelectorAll('#rows .row').length === 12", timeout=20000)
         check("набор EDGE загружен через API", True)
+        with page.expect_download(timeout=20000) as dl:
+            page.click("#export")
+        check("экспорт для сдачи: скачан results.json", dl.value.suggested_filename == "results.json")
+        doc = json.loads(Path(dl.value.path()).read_text(encoding="utf-8"))
+        check("экспорт для сдачи: 12 записей EDGE в формате организаторов",
+              doc.get("schema_version") == "1.0" and len(doc.get("results", [])) == 12
+              and all(r["status"] in ("ok", "error") for r in doc["results"]), str(doc.get("results", []))[:200])
         page.click("#pills button[data-f='not_evaluable']")
         ne = page.locator("#rows .row").count()
         check("фильтр not_evaluable → edge-ru-005", ne == 1 and "edge-ru-005" in page.inner_text("#rows"), f"строк {ne}")

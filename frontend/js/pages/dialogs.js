@@ -16,6 +16,7 @@ CQA.pages.dialogs = async function (app) {
         <button class="btn btn-o" id="load">Загрузить набор</button>
         <button class="btn btn-g" id="run">Оценить все</button>
         <button class="btn btn-o" id="runNew" title="Оценить только диалоги без оценки текущей версией чек-листа">Оценить неоценённые</button>
+        <button class="btn btn-o" id="export" title="results.json в формате организаторов: автоматическая оценка набора последней версией чек-листа">Экспорт для сдачи</button>
       </div>
       <div class="progress" id="progress"><div class="pt"><span id="ptext">Оценено 0 из 0</span><span id="ppct">0%</span></div><div class="pb"><i id="pbar"></i></div></div>
       <div id="batchNote" class="ro-note"></div>
@@ -157,6 +158,21 @@ CQA.pages.dialogs = async function (app) {
     setTimeout(() => pr.classList.remove('show'), 1500);
   }
 
+  async function exportResults() {
+    const btn = app.querySelector('#export');
+    btn.disabled = true; btn.textContent = 'Экспортирую…';
+    try {
+      const doc = await CQA.api.exportResults(cfg.GROUP_ID);
+      const blob = new Blob([JSON.stringify(doc, null, 2) + '\n'], { type: 'application/json' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'results.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      const ok = doc.results.filter(r => r.status === 'ok').length;
+      toast(`Экспорт ${cfg.GROUP_ID}: ${ok} ok, ${doc.results.length - ok} error; модель ${doc.model.name} (${doc.model.mode})`);
+    } catch (e) { toast('Экспорт не выполнен: ' + e.message, true); }
+    btn.disabled = false; btn.textContent = 'Экспорт для сдачи';
+  }
+
   /* --- события --- */
   const setFilter = f => {
     filter = f;
@@ -170,6 +186,7 @@ CQA.pages.dialogs = async function (app) {
   app.querySelector('#load').onclick = importAndLoad;
   app.querySelector('#run').onclick = () => run(false);
   app.querySelector('#runNew').onclick = () => run(true);
+  app.querySelector('#export').onclick = exportResults;
   window.addEventListener('hashchange', () => { alive = false; }, { once: true });
 
   tilt(app); parallax(app.querySelector('.hero'));

@@ -166,6 +166,9 @@ CQA.api = (() => {
       });
     },
 
+    // экспорт для сдачи организаторам: документ results.json (автоматическая оценка, без апелляций)
+    exportResults: (group, version) => http('GET', `/api/export?group_id=${q(group)}` + (version ? `&checklist_version=${version}` : '')),
+
     // оценка: один диалог синхронно, набор — пакетом с прогрессом
     evaluateOne: (conversation_id, version) => http('POST', '/api/evaluations',
       { conversation_id, checklist_id: cfg.CHECKLIST_ID, checklist_version: version || null }),

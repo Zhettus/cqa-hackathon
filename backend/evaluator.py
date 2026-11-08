@@ -336,7 +336,9 @@ def finalize_criterion(criterion: dict, votes: list[Vote], facts: dict, settings
     if guard_notes:
         explanation = (explanation + " " + " ".join(guard_notes)).strip()
     if answer == "na":
-        evidence = {"kind": "na_condition", "quotes": [], "range": None,
+        # диапазон проверенных реплик сохраняется и для N/A: это реплики, подтверждающие условие
+        # (нужны для evidence_turns при сдаче); на ответ и баллы не влияет
+        evidence = {"kind": "na_condition", "quotes": [], "range": _range(r),
                     "na_condition": r.get("na_reason") or criterion.get("na_condition")}
     elif r.get("evidence"):
         evidence = {"kind": "quote", "quotes": [{"n": e["idx"], "text": e["quote"], "model_quote": e["model_quote"]}
