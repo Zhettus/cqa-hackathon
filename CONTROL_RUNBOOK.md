@@ -100,7 +100,7 @@ python scripts/validate_results.py results/prod/results.json --group <PROD_GROUP
 ```
 git add results/prod/results.json data/prod_raw.json
 git commit -m "prod: results.json (<PROD_GROUP_ID>)"
-git push zhettus main          # репозиторий сдачи: https://github.com/Zhettus/cqa-hackathon
+git push zhettus HEAD:main     # репозиторий сдачи: https://github.com/Zhettus/cqa-hackathon (ветка main, с любой локальной ветки)
 ```
 Проверить файл по ссылке на GitHub (`gh browse results/prod/results.json` или открыть в браузере), убедиться,
 что виден именно последний коммит. Если пуш не прошёл (сеть, права) — `gh auth status`, повторить; в крайнем
