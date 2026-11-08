@@ -431,7 +431,8 @@ def get_evaluation(conn: sqlite3.Connection, evaluation_id: str) -> dict:
 
 def _meta(m: dict) -> dict:
     return {"confidence": m.get("confidence"), "votes": m.get("votes", []), "model_answer": m.get("model_answer"),
-            "guards": m.get("guards", []), "hints": m.get("hints", []), "violation_type": m.get("violation_type")}
+            "guards": m.get("guards", []), "hints": m.get("hints", []), "violation_type": m.get("violation_type"),
+            "na_reason_derived": bool(m.get("na_reason_derived", False))}
 
 
 def evaluation_cost(conn: sqlite3.Connection, evaluation_id: str) -> dict:

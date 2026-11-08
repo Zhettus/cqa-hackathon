@@ -143,7 +143,14 @@ def validate_response(criterion: dict, resp: dict, pre: Preprocessed) -> list[Va
 
     if answer == "na":
         if not (resp.get("na_reason") or "").strip():
-            issues.append(ValidationIssue("missing_na_reason", "при answer=na нужно na_reason: какое условие выполнено"))
+            if (resp.get("reasoning") or "").strip():
+                # Разрешённый N/A, na_reason пуст, а условие объяснено в reasoning (так отвечает локальная модель):
+                # берём причину оттуда и помечаем флагом na_reason_derived (решение пользователя, 2026-11-08).
+                resp["na_reason"] = resp["reasoning"].strip()
+                resp["na_reason_derived"] = True
+            else:
+                issues.append(ValidationIssue("missing_na_reason",
+                                              "при answer=na нужно na_reason: какое условие выполнено"))
     elif not evidence and rng is None:
         issues.append(ValidationIssue("missing_evidence",
                                       "нужны evidence (idx + цитата) или checked_range (где действие ожидалось)"))

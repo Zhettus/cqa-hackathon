@@ -347,6 +347,7 @@ def finalize_criterion(criterion: dict, votes: list[Vote], facts: dict, settings
     else:
         evidence = {"kind": "checked_range", "quotes": [], "range": _range(r), "na_condition": None}
     meta = {"confidence": confidence, "votes": [v.answer for v in votes], "model_answer": final,
+            "na_reason_derived": bool(answer == "na" and r.get("na_reason_derived")),
             "guards": [{"id": h.guard_id, "conditions": h.conditions, "before": h.before, "after": h.after}
                        for h in hits], "hints": hints}
     if criterion["type"] == "flag":
