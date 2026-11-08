@@ -14,6 +14,10 @@ KNOWN_PRICES: dict[str, dict[str, float]] = {
     "claude-sonnet-5-5": {"input": 2.0, "output": 10.0, "cache_read": 0.20},
     "claude-haiku-5-5": {"input": 0.10, "output": 0.50},
     "claude-fable-5-1": {"input": 10.0, "output": 50.0, "cache_read": 0.25},
+    # Gemini API, платный тариф (aistudio.google.com/docs/pricing, цены до 2026-12-31); на бесплатном тарифе $0
+    "gemini-3.8-flash": {"input": 0.75, "output": 3.75},
+    "gemini-3.6-flash": {"input": 0.75, "output": 3.75},
+    "gemini-3.1-flash-lite": {"input": 0.25, "output": 1.50},
 }
 
 

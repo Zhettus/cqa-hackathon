@@ -107,7 +107,7 @@ def test_evidence_turns_chat_and_statuses(conn, edge_records):
     db.insert_llm_call(conn, {"evaluation_id": ev["id"], "conversation_id": "edge-ru-001", "provider": "openai",
                               "model": "cqa-qwen14b", "status": "ok",
                               "request": {"base_url": "http://localhost:11434/v1", "model": "cqa-qwen14b"}})
-    assert export_group(conn, "EDGE", team_name="Тест")["model"] == {"mode": "hybrid", "name": "cqa-qwen14b; test-model"}
+    assert export_group(conn, "EDGE", team_name="Тест")["model"] == {"mode": "hybrid", "name": "qwen2.5:14b; test-model"}
 
 
 def test_export_rejects_criterion_without_code(conn, checklist_v1):

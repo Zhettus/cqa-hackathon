@@ -2,21 +2,93 @@
   "schema_version": "1.0",
   "team_name": "[НАЗВАНИЕ КОМАНДЫ]",
   "checklist_id": "chat-quality",
-  "values": {"yes": true, "no": false, "na": null},
+  "values": {
+    "yes": true,
+    "no": false,
+    "na": null
+  },
   "criteria": [
-    {"criterion_id": "c01", "code": "contact",        "allowed": [true, false]},
-    {"criterion_id": "c02", "code": "discovery",      "allowed": [true, false, null]},
-    {"criterion_id": "c03", "code": "identification", "allowed": [true, false, null]},
-    {"criterion_id": "c04", "code": "consultation",   "allowed": [0, 5, 10, 15, 20, null]},
-    {"criterion_id": "c05", "code": "empathy",        "allowed": [true, false]},
-    {"criterion_id": "c06", "code": "dialogue",       "allowed": [0, 4, 7, 10]},
-    {"criterion_id": "c07", "code": "closure",        "allowed": [true, false, null]},
-    {"criterion_id": "c08", "code": "critical",       "allowed": [true, false]}
+    {
+      "criterion_id": "c01",
+      "code": "contact",
+      "allowed": [
+        true,
+        false
+      ]
+    },
+    {
+      "criterion_id": "c02",
+      "code": "discovery",
+      "allowed": [
+        true,
+        false,
+        null
+      ]
+    },
+    {
+      "criterion_id": "c03",
+      "code": "identification",
+      "allowed": [
+        true,
+        false,
+        null
+      ]
+    },
+    {
+      "criterion_id": "c04",
+      "code": "consultation",
+      "allowed": [
+        0,
+        5,
+        10,
+        15,
+        20,
+        null
+      ]
+    },
+    {
+      "criterion_id": "c05",
+      "code": "empathy",
+      "allowed": [
+        true,
+        false
+      ]
+    },
+    {
+      "criterion_id": "c06",
+      "code": "dialogue",
+      "allowed": [
+        0,
+        4,
+        7,
+        10
+      ]
+    },
+    {
+      "criterion_id": "c07",
+      "code": "closure",
+      "allowed": [
+        true,
+        false,
+        null
+      ]
+    },
+    {
+      "criterion_id": "c08",
+      "code": "critical",
+      "allowed": [
+        true,
+        false
+      ]
+    }
   ],
   "critical_flag_code": "critical",
   "errors": {
     "not_evaluable": "В диалоге нет реплик оператора",
     "missing": "Оценка не выполнена",
     "no_total": "Итог не вычисляется: нет применимых критериев с весом"
+  },
+  "model_aliases": {
+    "cqa-qwen14b": "qwen2.5:14b"
   }
 }

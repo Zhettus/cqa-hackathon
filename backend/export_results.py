@@ -115,9 +115,11 @@ def _kind(provider: str | None, base_url: str | None) -> str:
     return "external_api"
 
 
-def models_used(conn: sqlite3.Connection, evaluation_ids: list[str]) -> dict:
+def models_used(conn: sqlite3.Connection, evaluation_ids: list[str], aliases: dict[str, str] | None = None) -> dict:
     """model для сдачи: все модели из llm_calls экспортируемых оценок (нормализация звонков логируется с тем же
-    evaluation_id); mode — local, если все вызовы к локальному серверу, external_api — если все к внешнему, иначе hybrid."""
+    evaluation_id); mode — local, если все вызовы к локальному серверу, external_api — если все к внешнему, иначе hybrid.
+    aliases — читаемые имена локальных сборок (cqa-qwen14b → qwen2.5:14b), из config/export_mapping.json."""
+    aliases = aliases or {}
     names: list[str] = []
     kinds: set[str] = set()
     for i in range(0, len(evaluation_ids), 500):
@@ -127,6 +129,7 @@ def models_used(conn: sqlite3.Connection, evaluation_ids: list[str]) -> dict:
                 f"SELECT DISTINCT provider, model, json_extract(request_json, '$.base_url') FROM llm_calls "
                 f"WHERE evaluation_id IN ({q})", chunk):
             kinds.add(_kind(provider, base_url))
+            model = aliases.get(model, model)
             if model and model not in names:
                 names.append(model)
     mode = "hybrid" if len(kinds) > 1 else ("local" if kinds == {"local"} else "external_api")
@@ -188,7 +191,7 @@ def export_group(conn: sqlite3.Connection, group_id: str, *, checklist_id: str =
                         "score": {"final_score": round(float(ev["total"]), 2), "critical_flag": bool(critical)}})
     return {"schema_version": mapping["schema_version"],
             "team_name": team_name or os.getenv("TEAM_NAME") or mapping["team_name"],
-            "model": models_used(conn, ev_ids), "results": results}
+            "model": models_used(conn, ev_ids, mapping.get("model_aliases")), "results": results}
 
 
 def write_document(doc: dict, out_dir: Path) -> Path:

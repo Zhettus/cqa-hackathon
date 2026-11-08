@@ -56,7 +56,13 @@ class OpenAICompatProvider(LLMProvider):
                     self._json_schema_supported = False      # сервер не знает json_schema → json_object
                     continue
                 if r.status_code == 429:
-                    last = LLMError(f"HTTP 429: лимит запросов провайдера: {r.text[:300]}", code="rate_limit")
+                    # тело 429 у Gemini/Groq содержит имя квоты и лимит — сохраняем целиком (до 1500 знаков)
+                    last = LLMError(f"HTTP 429: лимит запросов провайдера: {r.text[:1500]}", code="rate_limit")
+                elif r.status_code == 503:
+                    # «модель перегружена» (high demand) — ждать и повторять так же, как при лимите запросов,
+                    # а не помечать диалог failed после коротких повторов
+                    last = LLMError(f"HTTP 503: модель провайдера перегружена, повтор позже: {r.text[:600]}",
+                                    code="rate_limit")
                 elif r.status_code in RETRY_STATUS:
                     last = LLMError(f"HTTP {r.status_code}: {r.text[:300]}")
                 elif r.status_code in (401, 403):
