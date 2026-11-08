@@ -233,7 +233,7 @@ p1-en-013 (отчёт `20261108_061034`) снова failed: модель пиш�
 | Нормализация звонков в оценке | `NORMALIZE_CALLS=0` | `meta.normalize_calls == false` |
 | Лимиты и таймауты | `RATE_LIMIT_RPM=5`, `LLM_CONCURRENCY=3`, `LLM_TIMEOUT_S=600`, `LLM_MAX_RETRIES=3`, `RATE_LIMIT_BACKOFF_S=20` | `.env` (значения профиля gemini) |
 | Валидатор | смягчение N/A: пустой `na_reason` + непустой `reasoning` → причина из reasoning, флаг `na_reason_derived` | коммит валидатора от 2026-11-08 |
-| Сдача | `team_name` = `TEAM_NAME` из `.env` («[НАЗВАНИЕ КОМАНДЫ]» по решению пользователя); экспорт по v1 | `scripts/export_results.py --version 1` |
+| Сдача | `team_name` = `TEAM_NAME` из `.env` (**Twinxxx**); экспорт по v1 | `scripts/export_results.py --version 1` |
 
 **Выбор модели по времени выдачи prod** (квота бесплатного тарифа — 20 запросов в сутки на модель, сброс в 13:00 по Астане;
 квота `gemini-3.8-flash` на 8 ноября исчерпана замером в 08:00):

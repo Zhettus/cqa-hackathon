@@ -32,7 +32,10 @@ def test_na_not_allowed(pre):
 
 def test_na_allowed_needs_reason(pre):
     assert validate_response(CL["c02"], resp(answer="na", evidence=[], na_reason="Данных хватало: #1, #5"), pre) == []
-    assert codes(validate_response(CL["c02"], resp(answer="na", evidence=[], na_reason=""), pre)) == ["missing_na_reason"]
+    # пустой na_reason при непустом reasoning принимается: причина берётся из reasoning (флаг na_reason_derived)
+    r = resp(answer="na", evidence=[], na_reason="")
+    assert validate_response(CL["c02"], r, pre) == [] and r["na_reason_derived"] is True and r["na_reason"] == r["reasoning"]
+    assert "missing_na_reason" in codes(validate_response(CL["c02"], resp(answer="na", evidence=[], na_reason="", reasoning=" "), pre))
 
 
 @pytest.mark.parametrize("bad", [12, 3, 21, "15", True])

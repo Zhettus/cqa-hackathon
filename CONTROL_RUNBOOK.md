@@ -19,7 +19,7 @@
 | промпт | `v1-519e55c3c0` (в per_dialog — `v1-519e55c3c0\|dialog`) | `meta.prompt_version` |
 | нормализация звонков в оценке | `NORMALIZE_CALLS=0` | `meta.normalize_calls == false` |
 | лимиты | `RATE_LIMIT_RPM=5`, `LLM_CONCURRENCY=3`, `LLM_TIMEOUT_S=600`, `LLM_MAX_RETRIES=3` | `.env` |
-| имя команды | `TEAM_NAME=[НАЗВАНИЕ КОМАНДЫ]` (решение пользователя) | `.env` |
+| имя команды | `TEAM_NAME=Twinxxx` | `.env` |
 | валидатор | N/A с пустым `na_reason` принимается, причина из `reasoning` (флаг `na_reason_derived`) | код |
 
 **Квота Gemini (бесплатный тариф): 20 запросов в сутки на модель**, сброс в 00:00 по тихоокеанскому времени
@@ -44,7 +44,7 @@
 
 | Шаг | Команда / действие | Время |
 |---|---|---|
-| 0.1 | `.env`: `LLM_PROVIDER=gemini`, `LLM_MODEL=` по таблице выше, `GEMINI_API=…`, `EVAL_MODE=per_dialog`, `VOTES=1`, `NORMALIZE_CALLS=0`, `TEAM_NAME=[НАЗВАНИЕ КОМАНДЫ]`, `DATA_API_URL=…` | 1 мин |
+| 0.1 | `.env`: `LLM_PROVIDER=gemini`, `LLM_MODEL=` по таблице выше, `GEMINI_API=…`, `EVAL_MODE=per_dialog`, `VOTES=1`, `NORMALIZE_CALLS=0`, `TEAM_NAME=Twinxxx`, `DATA_API_URL=…` | 1 мин |
 | 0.2 | `pytest -q` зелёный; `git status` чистый; `git remote -v` показывает репозиторий, `git push --dry-run` проходит | 1 мин |
 | 0.3 | Репетиция на EDGE как на «учебном prod» (без вызовов модели, из сохранённых оценок): `python scripts/export_results.py --group EDGE --out tmp/prod_rehearsal --db data/cqa_local.db --version 1` → «ошибок 0», 12 записей | 1 мин |
 | 0.4 | Квота выбранной модели Gemini сегодня не тронута: до выдачи prod ни одного запроса к `gemini-3.6-flash` | — |
@@ -100,7 +100,7 @@ python scripts/validate_results.py results/prod/results.json --group <PROD_GROUP
 ```
 git add results/prod/results.json data/prod_raw.json
 git commit -m "prod: results.json (<PROD_GROUP_ID>)"
-git push
+git push zhettus main          # репозиторий сдачи: https://github.com/Zhettus/cqa-hackathon
 ```
 Проверить файл по ссылке на GitHub (`gh browse results/prod/results.json` или открыть в браузере), убедиться,
 что виден именно последний коммит. Если пуш не прошёл (сеть, права) — `gh auth status`, повторить; в крайнем

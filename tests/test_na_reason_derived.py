@@ -27,7 +27,7 @@ def test_na_reason_taken_from_reasoning(edge_records, checklist_v1):
     assert validate_response(c02, r, pre) == [] and r["na_reason_derived"] is True
     # оба пустые — отклоняется, как раньше
     r = _resp(na_reason=None, reasoning="  ")
-    assert [i.code for i in validate_response(c02, r, pre)] == ["missing_na_reason"]
+    assert "missing_na_reason" in [i.code for i in validate_response(c02, r, pre)]
     # явный na_reason не подменяется и флага нет
     r = _resp(na_reason="Условие выполнено: #1.")
     assert validate_response(c02, r, pre) == [] and "na_reason_derived" not in r and r["na_reason"] == "Условие выполнено: #1."

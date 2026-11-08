@@ -1,7 +1,13 @@
 import json
+import os
 from pathlib import Path
 
 import pytest
+
+# Тесты не зависят от .env разработчика: режим вызовов, голоса, лимиты и нормализация — фиксированные значения.
+# load_dotenv не переопределяет уже заданные переменные окружения.
+os.environ.update({"EVAL_MODE": "per_criterion", "VOTES": "1", "NORMALIZE_CALLS": "0", "RATE_LIMIT_RPM": "0",
+                   "LLM_CONCURRENCY": "8", "LLM_TIMEOUT_S": "120", "LLM_MAX_RETRIES": "3", "LLM_EFFORT": "high"})
 
 ROOT = Path(__file__).resolve().parent.parent
 
