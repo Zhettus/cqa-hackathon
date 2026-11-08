@@ -240,7 +240,9 @@ def build_dialog_criteria_block(criteria: list[dict], hints: dict[str, list[dict
              "Доказательства обязательны по КАЖДОМУ критерию (кроме N/A): evidence — дословные цитаты с номером "
              "реплики (#idx), когда есть что процитировать; checked_range {from, to} — диапазон реплик оператора, "
              "которые ты проверил, — заполняй ВСЕГДА, даже если нарушений нет или действие выполнено. Пустой "
-             "evidence вместе с checked_range = null — ошибка, такой ответ будет отклонён.", ""]
+             "evidence вместе с checked_range = null — ошибка, такой ответ будет отклонён. Если answer = \"na\", "
+             "обязательно заполни na_reason — какое условие неприменимости выполнено (пустой na_reason при N/A "
+             "тоже будет отклонён).", ""]
     for c in criteria:
         block = build_criterion_block(c, hints.get(c["id"]))
         block = block.replace("Оцени оператора по этому критерию и верни JSON по схеме.", "").rstrip()

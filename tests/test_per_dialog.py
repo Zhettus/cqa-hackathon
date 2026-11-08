@@ -51,6 +51,7 @@ def test_schema_and_block_from_config(checklist_v1):
     block = build_dialog_criteria_block(crits, {"c08": [{"idx": 10, "match": "мне на карту", "label": "л"}]})
     assert "ВСЕМ 8 КРИТЕРИЯМ" in block and block.count("КРИТЕРИЙ c0") == 8 and "#10: «мне на карту»" in block
     assert "Оцени оператора по этому критерию" not in block
+    assert "checked_range" in block and "na_reason" in block and "будет отклонён" in block   # явные требования к форме
     new = crits + [{"id": "c99", "section": "conduct", "title": "Новый", "type": "binary", "weight": 1,
                     "na_allowed": False, "description": "x"}]
     assert "c99" in response_schema_all(new)["properties"] and "КРИТЕРИЙ c99:" in build_dialog_criteria_block(new)
