@@ -1,0 +1,162 @@
+{
+ "meta": {
+  "started": "2026-11-08 06:10",
+  "gold": [
+   "eval/gold_tune.json"
+  ],
+  "prompt_version": "v1-519e55c3c0|dialog",
+  "model": "openai/cqa-qwen14b",
+  "votes": 1,
+  "mode": "per_dialog",
+  "normalize": false,
+  "channel": null,
+  "usd": 0.0,
+  "seconds": 451.31794571876526
+ },
+ "results": [
+  {
+   "conversation_id": "p1-en-013",
+   "status": "failed",
+   "language": "EN",
+   "channel": "agent chat",
+   "total": null,
+   "gold_total": 92.31,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "no",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "yes",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    }
+   ],
+   "uncertain": [],
+   "notes": "04:36 платная частная консультация по личному номеру; чат закрыт оператором.",
+   "cached": false,
+   "cost": {
+    "calls": 3,
+    "tokens_in": 16300,
+    "tokens_out": 2532,
+    "usd": 0.0,
+    "rejected_calls": 3
+   },
+   "status_reason": "c03: c03: ответ не прошёл проверку после 2 повторов: при answer=na нужно na_reason: какое условие выполнено",
+   "expected_status": "completed",
+   "status_mismatch": true
+  }
+ ],
+ "edge": []
+}
