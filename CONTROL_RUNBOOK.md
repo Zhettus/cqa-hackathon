@@ -1,105 +1,130 @@
-# Контрольный набор (23-й час): порядок действий
+# Сдача контрольного набора (prod): порядок действий
 
-Цель: получить оценки 10 новых диалогов по `group_id` организаторов в сжатые сроки, без ручных шагов
-в коде. Всё делается через REST API работающего сервера (или `eval.run`, если нужен отчёт).
+Цель: за отведённый час получить `results/prod/results.json` (10 диалогов) в формате организаторов, проверить
+его валидатором (0 ошибок) и запушить в репозиторий. DEV (`results/dev/results.json`, 65 диалогов) сдаётся
+заранее тем же инструментом. Формат и правила — `backend/export_results.py`, коды критериев —
+`config/export_mapping.json`.
 
-## Зафиксированная конфигурация (сверить по `GET /api/meta` перед шагом 1)
+Общий бюджет: **≈ 25 минут чистого времени**, запас до стоп-кода — не меньше 15 минут → начинать не позже чем
+за 40 минут до стоп-кода. Все команды — из корня репозитория, `.venv` активирован (или `.venv/bin/python`).
 
-| Параметр | Значение |
-|---|---|
-| модель / effort | `claude-opus-5-5` / `high` (`meta.llm`) |
-| версия промпта | **`v1-519e55c3c0`** (`meta.prompt_version`; иначе — кто-то менял `backend/prompt.py` или `docs/rules.md`) |
-| чек-лист | **`chat-quality` v1** (`meta.checklists == [{"id":"chat-quality","version":1}]`); кандидат v2 со справочником не активирован — см. `backend/checklists/candidates/README.md` |
-| голоса | **5** (`meta.votes`) |
-| нормализация звонков в оценке | **выключена** (`meta.normalize_calls == false`) |
+## Конфигурация freeze-2 (предложение; фиксируется после «ок», тег `freeze-2`)
 
-Точность этой конфигурации на эталоне (`--votes 3`): tune 425/440 = 96.6 %, edge 87/88 (`docs/STATUS.md` §3).
-Ничего не подгружается на лету: промпт и правила — файлы репозитория на зафиксированном коммите, чек-лист — из БД
-(засеян из `backend/checklists/default_v1.json`), модель и параметры — из `.env`.
+| Параметр | Значение | Где |
+|---|---|---|
+| провайдер / модель | `LLM_PROVIDER=gemini` → `gemini-3.8-flash` (профиль в `backend/llm/__init__.py`) | `.env`; `GET /api/meta` → `llm` |
+| ключ | `GEMINI_API` (или `GEMINI_API_KEY`) | `.env` |
+| режим / голоса | `EVAL_MODE=per_dialog`, `VOTES=1` (один запрос на диалог) | `.env`; `meta.votes` |
+| чек-лист | `chat-quality` **v1** (кандидат v2 со справочником не активирован) | `meta.checklists` |
+| промпт | `v1-519e55c3c0` (режим per_dialog пишется как `v1-519e55c3c0\|dialog`) | `meta.prompt_version` |
+| нормализация звонков в оценке | `NORMALIZE_CALLS=0` | `meta.normalize_calls == false` |
+| лимиты | `RATE_LIMIT_RPM=5`, `LLM_CONCURRENCY=3`, `LLM_TIMEOUT_S=600`, `LLM_MAX_RETRIES=3` (значения профиля gemini) | `.env` |
+| имя команды | `TEAM_NAME=…` | `.env`; валидатор отклоняет плейсхолдер |
 
-## 0. Заранее (за час)
+**Квота Gemini (бесплатный тариф): 20 запросов в сутки на модель**, сброс в 00:00 по тихоокеанскому времени
+(13:00 по Астане). Prod при VOTES=1 — 10 запросов + 1 пробный + повторы валидатора (на замере 0 из 5) →
+нужно **11–20 запросов**: в день сдачи квоту `gemini-3.8-flash` ни на что другое не тратить.
+Время ответа 53–239 с на диалог; 10 диалогов при 3 параллельных ≈ **10 минут** (худший случай с ожиданиями 503 ≈ 15).
 
-1. `.env`: `LLM_API_KEY` действителен, `DATA_API_URL` задан; настройки прогона:
-   ```
-   VOTES=5
-   NORMALIZE_CALLS=0
-   LLM_CONCURRENCY=8
-   ```
-2. Перезапустить сервер: `.venv/bin/uvicorn backend.main:app --port 8000`.
-3. Проверить: `curl localhost:8000/api/health`, `curl localhost:8000/api/meta` (провайдер, модель,
-   `data_api_configured: true`).
-4. Убедиться, что текущий чек-лист — нужная версия: `curl localhost:8000/api/checklists/chat-quality`.
-5. Прогрев: оценить один диалог DEV (`POST /api/evaluations`) — проверка ключа и модели (~$0.5 при VOTES=5).
+Запасные варианты (переключение одной строкой в `.env`, перезапуск сервера не нужен для скриптов):
 
-## 1. Импорт
+| Вариант | Строка `.env` | Когда | Цена |
+|---|---|---|---|
+| другая модель Gemini (своя квота 20/сутки) | `LLM_MODEL=gemini-3.6-flash` (или `gemini-3.5-flash`) | в ответе 429 «requests per day» по `gemini-3.8-flash` | точность не измерена, то же семейство |
+| локальная модель | `LLM_PROVIDER=ollama` (qwen2.5:14b, `ollama/README.md`) | Gemini недоступен (квота, сеть, 503 дольше 5 мин) | ≈ 181 с на диалог → 10 диалогов ≈ 30 мин; точность ≈ 65–70 % против 100 % у Gemini на 5 edge |
+
+Уже оценённые диалоги при переключении не пересчитываются (кэш по диалогу + чек-лист + промпт + модель + голоса
+хранится в БД; `evaluate_group.py` пропускает их), `results.json` при смешении моделей получит `mode: hybrid`.
+
+## 0. Заранее (сегодня, до выдачи prod)
+
+| Шаг | Команда / действие | Время |
+|---|---|---|
+| 0.1 | `.env`: `LLM_PROVIDER=gemini`, `GEMINI_API=…`, `EVAL_MODE=per_dialog`, `VOTES=1`, `NORMALIZE_CALLS=0`, `TEAM_NAME=…`, `DATA_API_URL=…` | 1 мин |
+| 0.2 | `pytest -q` зелёный; `git status` чистый; `git remote -v` показывает репозиторий, `git push --dry-run` проходит | 1 мин |
+| 0.3 | Репетиция на EDGE как на «учебном prod» (без вызовов модели, из сохранённых оценок): `python scripts/export_results.py --group EDGE --out tmp/prod_rehearsal --db data/cqa_local.db --version 1` → «ошибок 0», 12 записей | 1 мин |
+| 0.4 | Квота Gemini на модель сегодня не тронута (иначе ждать 13:00 или перейти на запасную модель) | — |
+
+## 1. Получить prod (≈ 2 мин)
 
 ```
-curl -X POST localhost:8000/api/datasets/import -H 'content-type: application/json' \
-     -d '{"group_id":"<GROUP_ID>","prefer":"remote"}'
+python scripts/fetch_group.py <PROD_GROUP_ID>
 ```
-Ответ: `source: "remote"`, `imported: 10`. Если API организаторов недоступен и файл сохранён локально как
-`data/<group_id>.json` — тот же запрос с `"prefer":"local"`. Ручная загрузка JSON: `POST /api/datasets/upload`.
+Скрипт делает `GET {DATA_API_URL}?group_id=<PROD_GROUP_ID>` **так же, как сервер**, сохраняет исходный ответ API
+байт в байт в `data/prod_raw.json` и копию `data/<PROD_GROUP_ID>.json` (для импорта `prefer: local`), печатает
+число записей, каналы и языки. Ожидается 10 записей. Если API недоступен — сохранить ответ вручную (браузер /
+`curl … -o data/prod_raw.json`) и положить тот же файл как `data/<PROD_GROUP_ID>.json`.
 
-Проверка: `curl 'localhost:8000/api/conversations?group_id=<GROUP_ID>'` — 10 диалогов, у звонков
-`has_audio` (аудио скачивается отдельно `python scripts/download_audio.py data/<group_id>.json`).
-
-## 2. Пакетная оценка
+## 2. Загрузить и сделать пробный вызов (≈ 4 мин, 1 запрос квоты)
 
 ```
-curl -X POST localhost:8000/api/batches -H 'content-type: application/json' \
-     -d '{"group_id":"<GROUP_ID>","checklist_id":"chat-quality","concurrency":4}'
-→ {"batch_id":"bt_…","status":"running","total":10}
+python scripts/evaluate_group.py --group <PROD_GROUP_ID> --version 1 --parallel 1 --ids <первый conversation_id>
 ```
-Прогресс: `curl localhost:8000/api/batches/bt_…` раз в 2–5 с (`progress.percent`, `items[].status`).
-Сбой одного диалога не останавливает пакет (`failed` с причиной в `items[].error`); повтор —
-`POST /api/evaluations {"conversation_id": "…"}`.
+Скрипт сам импортирует набор из `data/<PROD_GROUP_ID>.json` (если его нет в БД), печатает модель / промпт /
+чек-лист (сверить с таблицей freeze-2) и оценивает один диалог. Ожидается `completed <итог> (… с)`.
+- `Остановлено (ключ провайдера не принят)` → проверить `GEMINI_API`.
+- `лимит/перегрузка провайдера, ожидание …` с текстом «requests per day» в `tmp`-логе или в
+  `GET /api/llm-calls?status=provider_error` → квота на сегодня исчерпана → запасной вариант (см. таблицу), повторить шаг.
+- Для звонков аудио не нужно (оценка по транскрипту); `scripts/download_audio.py` — только для карточки в интерфейсе.
 
-Ориентир по времени (замер на 10 диалогах DEV, VOTES=5, NORMALIZE_CALLS=0, concurrency 4):
-**замер не выполнен — баланс API исчерпан 2026-11-08 02:17.** Оценка по измеренным прогонам:
-≈ 3–5 минут и ≈ $5 на 10 диалогов (при `--votes 3` 55 диалогов заняли 630 с при 4 параллельных).
-Замер после пополнения: перезапустить сервер с настройками §0, затем
+## 3. Оценить все 10 (≈ 10 мин, ≤ 9 запросов + повторы)
+
 ```
-BID=$(curl -s -X POST localhost:8000/api/batches -H 'content-type: application/json' \
-  -d '{"conversation_ids":["p1-ru-001","p1-ru-002","p1-ru-004","p1-ru-005","p1-ru-006","p1-ru-008","p1-kz-001","p1-en-001","p1-en-003","p4-ru-002"],"concurrency":4}' \
-  | .venv/bin/python -c 'import json,sys; print(json.load(sys.stdin)["batch_id"])')
-time (until curl -s localhost:8000/api/batches/$BID | grep -q '"status": *"completed"'; do sleep 3; done)
+python scripts/evaluate_group.py --group <PROD_GROUP_ID> --version 1 --parallel 3 --retries 2
 ```
-и записать время сюда и в `docs/STATUS.md` §6.
+Пробный диалог берётся из кэша. В конце: `Готово за … с: {'completed': 10}` (или `not_evaluable` для диалога без
+реплик оператора — это нормально, в сдаче он станет `error` с текстом «В диалоге нет реплик оператора»).
+`failed после повторов: [...]` → ещё раз та же команда (повторяются только упавшие); если причина — квота или
+503 дольше 5 минут → переключить `.env` на запасной вариант и повторить команду.
+Альтернатива через интерфейс: `http://localhost:8000/#dialogs`, group_id → «Загрузить набор» → «Оценить все»
+(сервер должен быть перезапущен после правки `.env`).
 
-## 3. Результаты
+## 4. Экспорт и проверка (≈ 1 мин)
 
-- Таблица: `curl 'localhost:8000/api/results?group_id=<GROUP_ID>'`; CSV для сдачи:
-  `curl 'localhost:8000/api/results?group_id=<GROUP_ID>&format=csv' -o results.csv`.
-- Карточка диалога: `http://localhost:8000/?view=dialog&conversation=<id>` (обоснования, цитаты по `n`,
-  для звонков — очищенный текст и плеер по `audio_offset_s`); список — `/#dialogs`, результаты — `/#analytics`.
-- Логи и стоимость: `curl 'localhost:8000/api/llm-calls/summary?batch_id=bt_…'`.
+```
+python scripts/export_results.py --group <PROD_GROUP_ID> --out results/prod --version 1
+python scripts/validate_results.py results/prod/results.json --group <PROD_GROUP_ID> --data data/prod_raw.json --expected-count 10
+```
+Первая команда пишет `results/prod/results.json` и сразу проверяет его; вторая — независимая проверка по
+исходному ответу API: ровно 10 записей, те же ID, `Ошибок: 0`. Любая ошибка → исправить причину и повторить
+экспорт (ошибки валидатора называют запись и критерий). Экспорт берёт **автоматическую** оценку (апелляции не
+влияют), поэтому его можно повторять сколько угодно. То же делает кнопка «Экспорт для сдачи» на экране диалогов
+(скачивает `results.json`).
 
-## 3а. Если облачная модель недоступна (баланс, ключ, лимиты)
+## 5. Коммит и пуш (≈ 2 мин)
 
-Сообщение пакета вида «У провайдера закончился баланс/квота (биллинг)…» или «Провайдер отклонил ключ…» —
-пакет остановлен, оценённые диалоги сохранены. Переключение (только `.env`, перезапуск сервера):
+```
+git add results/prod/results.json data/prod_raw.json
+git commit -m "prod: results.json (<PROD_GROUP_ID>)"
+git push
+```
+Проверить файл по ссылке на GitHub (`gh browse results/prod/results.json` или открыть в браузере), убедиться,
+что виден именно последний коммит. Если пуш не прошёл (сеть, права) — `gh auth status`, повторить; в крайнем
+случае загрузить файл через веб-интерфейс GitHub в `results/prod/`.
 
-1. Бесплатная облачная (если есть ключ): `LLM_PROVIDER=openai`, `LLM_BASE_URL`/`LLM_MODEL`/`LLM_API_KEY`
-   из `.env.example` (Gemini, Groq или OpenRouter), `RATE_LIMIT_RPM` под тариф, `EVAL_MODE=per_dialog`,
-   `VOTES=1`. Точность не измерена (ключа не было).
-2. Локальная Ollama (`ollama/README.md`): `LLM_PROVIDER=openai  LLM_BASE_URL=http://localhost:11434/v1
-   LLM_MODEL=cqa-qwen14b  LLM_API_KEY=ollama  LLM_CONCURRENCY=1  LLM_TIMEOUT_S=900  EVAL_MODE=per_dialog  VOTES=1`;
-   пакет с `concurrency: 1`. Измерено: ≈ 181 с на диалог → 10 диалогов ≈ 30 мин, $0; точность ≈ 70 % по критериям против 97 % у Opus (`docs/STATUS.md` §4а).
-3. Затем новый пакет: `POST /api/batches {"group_id":"<GROUP_ID>","only_not_evaluated":true,"concurrency":1}` —
-   оценит только то, что не успела облачная модель (версия чек-листа та же).
+## Хронометраж
 
-При 429 (лимит запросов) ничего делать не нужно: пакет ждёт `RATE_LIMIT_BACKOFF_S × 2^n` и повторяет сам
-(статус элемента остаётся `running`, причина ожидания — в `items[].error`).
+| Шаг | План | Факт (вписать) |
+|---|---|---|
+| 1 получить prod | 2 мин | |
+| 2 импорт + пробный вызов | 4 мин | |
+| 3 оценка 10 диалогов | 10 мин (запас. вариант ollama: 30 мин) | |
+| 4 экспорт + проверка | 1 мин | |
+| 5 коммит + пуш + проверка на GitHub | 2 мин | |
+| **итого** | **≈ 20 мин** + запас 15 мин | |
 
-## 4. Если что-то пошло не так
+Замер на DEV (65 диалогов, локальная модель): см. `docs/STATUS.md` §6 — ориентир по времени на диалог для
+запасного варианта.
+
+## Если что-то пошло не так
 
 | Симптом | Действие |
 |---|---|
-| `502 data_source_error` при импорте | проверить `DATA_API_URL`/сеть; сохранить JSON организаторов в `data/<group_id>.json` и импортировать с `prefer: local` |
-| пакет `failed` с ошибкой аутентификации или биллинга | диалоги со статусом `provider_error` не оценены (записей оценки нет); проверить `LLM_API_KEY`/баланс или переключить провайдера (§3а), перезапустить сервер, новый пакет с `only_not_evaluated: true` |
-| отдельные `failed` в пакете | `POST /api/evaluations` по диалогу; причина — в `items[].error` и `GET /api/llm-calls?conversation_id=…` |
-| `not_evaluable` | в диалоге нет засчитываемых реплик оператора (R1/R11) — итог `null`, это ожидаемое поведение |
-| нужно поменять критерий | `POST /api/checklists/chat-quality/versions` (новая версия) → новый пакет с `checklist_version` |
-| мало времени | `VOTES=3` (×0.6 времени); `NORMALIZE_CALLS=0` экономит ~1 вызов на звонок |
-
-Стоимость: ≈ $0.10 на диалог за голос (claude-opus-5-5); 10 диалогов при VOTES=5 ≈ $5.
+| 429 с текстом `requests per day` (квота модели на сегодня) | `.env`: `LLM_MODEL=gemini-3.6-flash` (своя квота) или `LLM_PROVIDER=ollama`; повторить шаг 3 — оценённые диалоги сохраняются |
+| 429 без «per day» / 503 «high demand» | ничего: скрипт ждёт `RATE_LIMIT_BACKOFF_S × 2^n` и повторяет (до `RATE_LIMIT_ATTEMPTS`); если дольше 5 мин — запасной вариант |
+| `Остановлено (ключ провайдера не принят)` | проверить `GEMINI_API` в `.env` (ключ AI Studio), повторить |
+| API организаторов недоступен | ответ сохранить вручную как `data/prod_raw.json` и `data/<PROD_GROUP_ID>.json`; `evaluate_group.py` импортирует локальный файл |
+| `not_evaluable` | ожидаемо: нет засчитываемых реплик оператора → в сдаче `error` «В диалоге нет реплик оператора» |
+| валидатор: `team_name не заполнено` | `TEAM_NAME` в `.env` или `--team` у экспорта |
+| валидатор: `нет записей для диалогов набора` | набор в БД неполный — шаг 3 ещё раз |
+| нужно поменять критерий / версию | не в день сдачи; конфигурация заморожена (freeze-2) |
