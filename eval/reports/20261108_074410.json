@@ -1,0 +1,175 @@
+{
+ "meta": {
+  "started": "2026-11-08 07:44",
+  "gold": [
+   "eval/edge_cases.json"
+  ],
+  "prompt_version": "v1-519e55c3c0|dialog",
+  "model": "openai/gemini-2.5-flash",
+  "votes": 1,
+  "mode": "per_dialog",
+  "normalize": false,
+  "channel": null,
+  "usd": 0,
+  "seconds": 0.508432149887085
+ },
+ "results": [
+  {
+   "conversation_id": "edge-ru-003",
+   "status": "failed",
+   "language": "RU",
+   "channel": "agent chat",
+   "total": null,
+   "gold_total": 100.0,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c01, c02, c03, c04, c05, c06, c07, c08: HTTP 404: [{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We recommend you to use the Interactions API (https://aistudio.google.com/docs/get",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c01, c02, c03, c04, c05, c06, c07, c08: HTTP 404: [{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We recommend you to use the Interactions API (https://aistudio.google.com/docs/get",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c01, c02, c03, c04, c05, c06, c07, c08: HTTP 404: [{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We recommend you to use the Interactions API (https://aistudio.google.com/docs/get",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c01, c02, c03, c04, c05, c06, c07, c08: HTTP 404: [{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We recommend you to use the Interactions API (https://aistudio.google.com/docs/get",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c01, c02, c03, c04, c05, c06, c07, c08: HTTP 404: [{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We recommend you to use the Interactions API (https://aistudio.google.com/docs/get",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c01, c02, c03, c04, c05, c06, c07, c08: HTTP 404: [{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We recommend you to use the Interactions API (https://aistudio.google.com/docs/get",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c01, c02, c03, c04, c05, c06, c07, c08: HTTP 404: [{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We recommend you to use the Interactions API (https://aistudio.google.com/docs/get",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "failed",
+     "match": false,
+     "status_mismatch": true,
+     "explanation": "c01, c02, c03, c04, c05, c06, c07, c08: HTTP 404: [{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We recommend you to use the Interactions API (https://aistudio.google.com/docs/get",
+     "guards": [],
+     "evidence": {},
+     "confidence": null,
+     "uncertain": false,
+     "step_error": null,
+     "cause": "статус failed"
+    }
+   ],
+   "uncertain": [],
+   "notes": "Пауза 8,5 мин предупреждена в 01:30 («это займёт несколько минут, ожидайте») → нарушения нет.",
+   "cached": false,
+   "cost": {
+    "calls": 1,
+    "tokens_in": 0,
+    "tokens_out": 0,
+    "usd": 0,
+    "rejected_calls": 1
+   },
+   "status_reason": "c01, c02, c03, c04, c05, c06, c07, c08: HTTP 404: [{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We recommend you to use the Interactions API (https://aistudio.google.com/docs/get",
+   "expected_status": "completed",
+   "status_mismatch": true
+  }
+ ],
+ "edge": [
+  {
+   "conversation_id": "edge-ru-003",
+   "target": [
+    "c06"
+   ],
+   "passed": false,
+   "all_criteria_match": false,
+   "problems": [
+    "статус failed, ожидался completed",
+    "c06: failed ≠ 10"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,262 @@
+{
+ "meta": {
+  "started": "2026-11-08 07:46",
+  "gold": [
+   "eval/edge_cases.json"
+  ],
+  "prompt_version": "v1-519e55c3c0|dialog",
+  "model": "openai/gemini-3.8-flash",
+  "votes": 1,
+  "mode": "per_dialog",
+  "normalize": false,
+  "channel": null,
+  "usd": 0.0,
+  "seconds": 119.10020303726196
+ },
+ "results": [
+  {
+   "conversation_id": "edge-ru-003",
+   "status": "completed",
+   "language": "RU",
+   "channel": "agent chat",
+   "total": 100.0,
+   "gold_total": 100.0,
+   "criteria": [
+    {
+     "criterion_id": "c01",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор в первой реплике #10 поприветствовал клиента и назвал своё имя на русском языке.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, меня зовут Тимур",
+        "model_quote": "Здравствуйте, меня зовут Тимур."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 10
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c02",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиент исчерпывающе сформулировал запрос в #1 и #5, дополнительных уточнений не требовалось.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Данных для ответа хватало с самого начала: клиент сразу задал конкретный вопрос о получении справки на английском языке."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c03",
+     "type": "binary",
+     "gold": "na",
+     "system": "na",
+     "match": true,
+     "accepted": false,
+     "explanation": "Вопрос касался стандартного функционала приложения по заказу справок, персональные данные или данные счёта не раскрывались.",
+     "guards": [],
+     "evidence": {
+      "kind": "na_condition",
+      "quotes": [],
+      "range": null,
+      "na_condition": "Запрос носил общий консультационный характер и не требовал идентификации."
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c04",
+     "type": "scale",
+     "gold": 20,
+     "system": 20,
+     "match": true,
+     "accepted": false,
+     "explanation": "Оператор предоставил точный пошаговый путь для заказа справки на английском языке в #12, клиент подтвердил решение в #13.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 12,
+        "text": "Да, справку можно заказать на английском: «Меню → Поручения → Справки», в поручении выберите язык документа English",
+        "model_quote": "Да, справку можно заказать на английском: «Меню → Поручения → Справки», в поручении выберите язык документа English."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c05",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиент не выражал недовольства, оператор общался вежливо и корректно на протяжении всего диалога.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Здравствуйте, меня зовут Тимур. Сейчас уточню у профильного отдела, это займёт несколько минут. Пожалуйста, ожидайте",
+        "model_quote": "Здравствуйте, меня зовут Тимур. Сейчас уточню у профильного отдела, это займёт несколько минут. Пожалуйста, ожидайте."
+       },
+       {
+        "n": 12,
+        "text": "Спасибо за ожидание",
+        "model_quote": "Спасибо за ожидание."
+       },
+       {
+        "n": 14,
+        "text": "Пожалуйста. Хорошего дня",
+        "model_quote": "Пожалуйста. Хорошего дня!"
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c06",
+     "type": "scale",
+     "gold": 10,
+     "system": 10,
+     "match": true,
+     "accepted": false,
+     "explanation": "Ответы оператора ясные и последовательные, перед длительной паузой клиент был корректно предупрежден об ожидании в #10.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 10,
+        "text": "Сейчас уточню у профильного отдела, это займёт несколько минут. Пожалуйста, ожидайте",
+        "model_quote": "Сейчас уточню у профильного отдела, это займёт несколько минут. Пожалуйста, ожидайте."
+       }
+      ],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": 0
+    },
+    {
+     "criterion_id": "c07",
+     "type": "binary",
+     "gold": "yes",
+     "system": "yes",
+     "match": true,
+     "accepted": false,
+     "explanation": "Клиент подтвердил решение вопроса в #13 («Нашёл, спасибо!»), после чего оператор вежливо попрощался в #14.",
+     "guards": [],
+     "evidence": {
+      "kind": "quote",
+      "quotes": [
+       {
+        "n": 14,
+        "text": "Пожалуйста. Хорошего дня",
+        "model_quote": "Пожалуйста. Хорошего дня!"
+       }
+      ],
+      "range": {
+       "from_n": 14,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    },
+    {
+     "criterion_id": "c08",
+     "type": "flag",
+     "gold": "no",
+     "system": "no",
+     "match": true,
+     "accepted": false,
+     "explanation": "Грубых нарушений со стороны оператора не зафиксировано.",
+     "guards": [],
+     "evidence": {
+      "kind": "checked_range",
+      "quotes": [],
+      "range": {
+       "from_n": 10,
+       "to_n": 14
+      },
+      "na_condition": null
+     },
+     "confidence": 1.0,
+     "uncertain": false,
+     "step_error": null
+    }
+   ],
+   "uncertain": [],
+   "notes": "Пауза 8,5 мин предупреждена в 01:30 («это займёт несколько минут, ожидайте») → нарушения нет.",
+   "cached": false,
+   "cost": {
+    "calls": 1,
+    "tokens_in": 4726,
+    "tokens_out": 1089,
+    "usd": 0.0,
+    "rejected_calls": 0
+   },
+   "status_reason": null,
+   "expected_status": "completed",
+   "status_mismatch": false
+  }
+ ],
+ "edge": [
+  {
+   "conversation_id": "edge-ru-003",
+   "target": [
+    "c06"
+   ],
+   "passed": true,
+   "all_criteria_match": true,
+   "problems": []
+  }
+ ]
+}
